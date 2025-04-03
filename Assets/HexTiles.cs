@@ -19,7 +19,7 @@ public class HexTile3D
     private const float HEIGHT = 1;
     private enum Directions { SouthEast, South, SouthWest, NorthWest, North, NorthEast };
 
-    public HexTile3D(string name, Vector3 where, uint wflags = 0xFF) {
+    public HexTile3D(string name, Vector3 where, uint wflags = 0xFF, Material[] materials = null) {
         gobj = new GameObject(name);
         this.name = name;
         location = where;
@@ -50,6 +50,15 @@ public class HexTile3D
             for (int i = 0; i < 6; i++) triangles.AddRange(new int[] {0, i + 1, i < 5 ? i + 2 : 1});
 
             mesh.triangles = triangles.ToArray();
+
+            // Generate UVs. Will unwrap a circle through the middle of the texture.
+            Vector2[] uvs = new Vector2[7];
+            for (int i = 0; i < 6; i++) uvs[i] = new Vector2(vertices[i].x/2+.5f, vertices[i].z/2+.5f);
+            mesh.uv = uvs;
+
+            // Set the render material.
+            if (materials != null && materials.Length > 0)
+                gobj.GetComponent<MeshRenderer>().material = materials[0];
         }
     
         // If a ceiling is specified (seventh bit), then duplicate the floor.
@@ -105,6 +114,10 @@ public class HexTile3D
             mesh.vertices = vertices.ToArray();
             mesh.triangles = triangles.ToArray();
             walls.transform.parent = gobj.transform;
+            
+            if (materials != null && materials.Length > 0) {
+                walls.GetComponent<MeshRenderer>().material = materials[materials.Length > 1 ? 1 : 0];
+            }
         }
 
         gobj.transform.position = where;
@@ -114,16 +127,20 @@ public class HexTile3D
 
 public class HexTiles : MonoBehaviour
 {
+
+    public Material mat_walls;
+    public Material mat_floor;
     void Start()
     {
-        HexTile3D h = new HexTile3D("test hex", Vector3.zero, 0x37);
-        new HexTile3D("northeast", new Vector3(2, 0, 1), 0x3A);
-        new HexTile3D("east", new Vector3(0, 0, 3), 0x1F);
+        Material[] materials = {mat_floor, mat_walls};
+        HexTile3D h = new HexTile3D("test hex", Vector3.zero, 0x37, materials);
+        new HexTile3D("northeast", new Vector3(1.5f, 0, (float)Sqrt(3)/2), 0x3A, materials);
+        new HexTile3D("east", new Vector3(3, 0, 0), 0x1F, materials);
 
 
-        new HexTile3D("other", new Vector3(6, 1, 6), 0xFF);
+        new HexTile3D("other", new Vector3(6, 1, 6), 0xFF, materials);
 
-        new HexTile3D("other", new Vector3(-6, 1, -6), 0x00);
+        new HexTile3D("other", new Vector3(-6, 1, -6), 0x00, materials);
 
     }
 
