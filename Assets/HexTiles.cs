@@ -122,7 +122,17 @@ public class HexTile3D
 
         gobj.transform.position = where;
     }
+
+    // Convert axial coordinates to a cartesian grid. Use for hex placement.
+    //      The axial x-axis is parallel to the cartesian x-axis.
+    //      The axial d-axis is diagonal at -30deg to the cartesian x-axis.
+    public static Vector3 ax2cart(int xax, int dax, float y = 0)
+    {
+        return new Vector3(1.5f * xax, y, (float) (-Sqrt(3)/2*xax + Sqrt(3)*dax));
+
+    }
 }
+
 
 
 public class HexTiles : MonoBehaviour
@@ -133,14 +143,25 @@ public class HexTiles : MonoBehaviour
     void Start()
     {
         Material[] materials = {mat_floor, mat_walls};
-        HexTile3D h = new HexTile3D("test hex", Vector3.zero, 0x37, materials);
-        new HexTile3D("northeast", new Vector3(1.5f, 0, (float)Sqrt(3)/2), 0x3A, materials);
-        new HexTile3D("east", new Vector3(3, 0, 0), 0x1F, materials);
+        // HexTile3D h = new HexTile3D("test hex", Vector3.zero, 0x37, materials);
+        // new HexTile3D("northeast", new Vector3(1.5f, 0, (float)Sqrt(3)/2), 0x3A, materials);
+        // new HexTile3D("east", new Vector3(3, 0, 0), 0x1F, materials);
+
+                new HexTile3D("0", HexTile3D.ax2cart(0,0), 0xFF, materials);
+                new HexTile3D("x1", HexTile3D.ax2cart(1,0), 0xFF, materials);
+                new HexTile3D("z1", HexTile3D.ax2cart(0,1), 0xFF, materials);
+                new HexTile3D("z2", HexTile3D.ax2cart(0,2), 0xFF, materials);
 
 
         new HexTile3D("other", new Vector3(6, 1, 6), 0xFF, materials);
 
         new HexTile3D("other", new Vector3(-6, 1, -6), 0x00, materials);
+
+        for (int x = 0; x < 20; x++) {
+            for (int z = 10; z < 30; z++) {
+                new HexTile3D(String.Concat("(", x, ", ", z, ")"), HexTile3D.ax2cart(x,z,1), 0xFF, materials);
+            }
+        }
 
     }
 
