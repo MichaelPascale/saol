@@ -84,6 +84,7 @@ public class HexTile3D
             List<int>
             triangles = new List<int>();
 
+            // Starting from the least significant bit...
             int wcount = 0;
             for (int i = 0; i < 6; i++) {
                 if ((wflags & 0x1u) > 0) {
@@ -98,7 +99,7 @@ public class HexTile3D
 
                     // Add triangles.
                     // Vertex indicies depend on how many walls have been created so far.
-                    int o = (i-wcount)*4;
+                    int o = wcount*4;
                     triangles.AddRange(new int[] {
                         o+0, o+1, o+2,
                         o+2, o+3, o+0
