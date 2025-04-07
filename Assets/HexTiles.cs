@@ -166,7 +166,12 @@ public class HexTiles : MonoBehaviour
 
         for (int x = 0; x < 20; x++) {
             for (int z = 10; z < 30; z++) {
-                new HexTile3D(String.Concat("(", x, ", ", z, ")"), HexTile3D.ax2cart(x,z,1), 0xFF, materials);
+                uint wall_config = 0x00;
+                if (x == 0)  wall_config |= 0x0c;
+                if (x == 19) wall_config |= 0x21;
+                if (z == 10) wall_config |= 0x06;
+                if (z == 29) wall_config |= 0x30;
+                new HexTile3D(String.Concat("(", x, ", ", z, ")"), HexTile3D.ax2cart(x,z,1), wall_config, materials);
             }
         }
 
