@@ -30,8 +30,7 @@ public class HexTile3D
 
         {
             // Create a mesh for the hexagonal floor.
-            Mesh mesh = gobj.GetComponent<MeshFilter>().mesh;
-            mesh.Clear();
+            Mesh mesh = new Mesh();
 
             // Allocate a center and six points.
             List<Vector3>
@@ -56,6 +55,10 @@ public class HexTile3D
             for (int i = 0; i < 6; i++) uvs[i] = new Vector2(vertices[i].x/2+.5f, vertices[i].z/2+.5f);
             mesh.uv = uvs;
 
+            mesh.RecalculateNormals();
+            gobj.GetComponent<MeshFilter>().mesh = mesh;
+            gobj.GetComponent<MeshCollider>().sharedMesh = mesh;
+
             // Set the render material.
             if (materials != null && materials.Length > 0)
                 gobj.GetComponent<MeshRenderer>().material = materials[0];
@@ -75,8 +78,7 @@ public class HexTile3D
             walls.AddComponent<MeshFilter>();
             walls.AddComponent<MeshRenderer>();
             walls.AddComponent<MeshCollider>();
-            Mesh mesh = walls.GetComponent<MeshFilter>().mesh;
-            mesh.Clear();
+            Mesh mesh = new Mesh();
 
             List<Vector3>
             vertices = new List<Vector3>();
@@ -114,6 +116,10 @@ public class HexTile3D
 
             mesh.vertices = vertices.ToArray();
             mesh.triangles = triangles.ToArray();
+            mesh.RecalculateNormals();
+            walls.GetComponent<MeshFilter>().mesh = mesh;
+            walls.GetComponent<MeshCollider>().sharedMesh = mesh;
+
             walls.transform.parent = gobj.transform;
             
             if (materials != null && materials.Length > 0) {
