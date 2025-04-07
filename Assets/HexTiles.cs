@@ -52,7 +52,7 @@ public class HexTile3D
 
             // Generate UVs. Will unwrap a circle through the middle of the texture.
             Vector2[] uvs = new Vector2[7];
-            for (int i = 0; i < 6; i++) uvs[i] = new Vector2(vertices[i].x/2+.5f, vertices[i].z/2+.5f);
+            for (int i = 0; i < 7; i++) uvs[i] = new Vector2(vertices[i].x/2+.5f, vertices[i].z/2+.5f);
             mesh.uv = uvs;
 
             mesh.RecalculateNormals();
@@ -116,6 +116,14 @@ public class HexTile3D
 
             mesh.vertices = vertices.ToArray();
             mesh.triangles = triangles.ToArray();
+
+            Vector2[] uvs = new Vector2[vertices.Count];
+            for (int i = 0; i < vertices.Count; i++) {
+                int imod = i % 4;
+                uvs[i] = new Vector2((imod == 1 || imod == 2) ? 1 : 0, (imod == 2|| imod == 3) ? 1 : 0);
+            }
+            mesh.uv = uvs;
+
             mesh.RecalculateNormals();
             walls.GetComponent<MeshFilter>().mesh = mesh;
             walls.GetComponent<MeshCollider>().sharedMesh = mesh;
