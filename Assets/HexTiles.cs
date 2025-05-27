@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 using System;
 using System.Collections.Generic;
 using System.IO.Compression;
@@ -15,6 +16,7 @@ public class HexTile3D
     public string name;
     public Vector3 location;
     public readonly GameObject gobj;
+    public readonly Vector3[] hex_vertices;
 
     private const float HEIGHT = 1;
     private enum Directions { SouthEast, South, SouthWest, NorthWest, North, NorthEast };
@@ -42,6 +44,7 @@ public class HexTile3D
             for (uint i = 0; i < 6; i++) vertices.Add(new Vector3((float)Cos(-i*PI/3), 0, (float)Sin(-i*PI/3)));
 
             mesh.vertices = vertices.ToArray();
+            hex_vertices = vertices.ToArray();
 
             // A hexagon is six triangles, six triplets of vertices.
             List<int>
@@ -176,6 +179,12 @@ public class HexTile3D
         return new Vector3(1.5f * xax, y, (float) (-Sqrt(3)/2*xax + Sqrt(3)*dax));
 
     }
+
+    // Given a numbered face (0-5), return the center vector.
+    public Vector3 getFaceCenter(uint face) { 
+        // Skip 0, the center vertex
+        return ((hex_vertices[face+1] + hex_vertices[face == 5 ? 1 : face+2]) /2)+ Vector3.up * HEIGHT / 2;   
+    }
 }
 
 
@@ -188,6 +197,7 @@ public class HexTiles : MonoBehaviour
 
     public Material mat_ceil;
 
+    public List<Texture> object_textures;
     void Start()
     {
         Material[] materials = {mat_floor, mat_walls, mat_ceil};
@@ -198,8 +208,19 @@ public class HexTiles : MonoBehaviour
         new HexTile3D("sw", HexTile3D.ax2cart(0,0), 0x40 + 0x0e, materials);
         new HexTile3D("nw", HexTile3D.ax2cart(0,1), 0x40 + 0x3c, materials);
         new HexTile3D("ne", HexTile3D.ax2cart(1,1), 0x40 + 0x31, materials);
+        Vector3 cent = se.getFaceCenter(3);
+        cent.x = cent.x * .9f;
+        cent.z = cent.z * .9f;
+        GameObject painting = GameObject.CreatePrimitive(PrimitiveType.Plane); //new GameObject("painting"); 
+        painting.name = "painting";
 
-        new HexTile3D("other", new Vector3(-6, 1, -6), 0x00, materials);
+        painting.transform.parent = se.gobj.transform;
+        painting.transform.localPosition = cent;
+        painting.transform.localScale = Vector3.one * .05f;
+        painting.transform.LookAt(Vector3.up / 2); // TODO: * HEIGHT which is inside the hextile class
+        painting.transform.Rotate(90, 0, 0);
+        painting.GetComponent<Renderer>().material.mainTexture = ImportTexture.loadTexture("Assets/Textures/SVLO/001.png");
+
 
         for (int x = 0; x < 20; x++) {
             for (int z = 10; z < 30; z++) {
@@ -208,7 +229,25 @@ public class HexTiles : MonoBehaviour
                 if (x == 19) wall_config |= 0x21;
                 if (z == 10) wall_config |= 0x06;
                 if (z == 29) wall_config |= 0x30;
-                new HexTile3D(String.Concat("(", x, ", ", z, ")"), HexTile3D.ax2cart(x,z,1), wall_config, materials);
+                HexTile3D hex = new HexTile3D(String.Concat("(", x, ", ", z, ")"), HexTile3D.ax2cart(x,z,1), 0x40 + wall_config, materials);
+
+                if (x == 0) {
+                    Vector3 ce = hex.getFaceCenter((uint) (2 + z%2));
+                    ce.x = ce.x * .9f;
+                    ce.z = ce.z * .9f;
+
+                    GameObject pt = GameObject.CreatePrimitive(PrimitiveType.Plane); //new GameObject("painting"); 
+                    pt.name = "painting";
+
+
+                    pt.transform.parent = hex.gobj.transform;
+                    pt.transform.localPosition = ce;
+                    pt.transform.localScale = Vector3.one * .05f;
+                    pt.transform.LookAt(hex.gobj.transform.position + Vector3.up / 2); // TODO: * HEIGHT which is inside the hextile class
+                    pt.transform.Rotate(90, 0, 0, Space.Self);
+                    
+                    pt.GetComponent<Renderer>().material.mainTexture = object_textures[z%6];
+                }
             }
         }
 
