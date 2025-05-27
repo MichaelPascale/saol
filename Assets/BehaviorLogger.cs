@@ -14,10 +14,18 @@ using SAOL;
 
 
 struct FrameRecord {
-    public double d;
-    public FrameRecord(double d)
+
+    public double time;
+    public float x;
+    public float z;
+
+    public double heading;
+    public FrameRecord(double time, Vector3 position, float roty)
     {
-        this.d = d;
+        this.time = time;
+        this.x = position.x;
+        this.z = position.z;
+        this.heading = roty;
     }
 }
 /* 
@@ -42,7 +50,7 @@ public class BehaviorLogger : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        records.Add(new FrameRecord(Time.timeAsDouble));
+        records.Add(new FrameRecord(Time.timeAsDouble, player.transform.position, player.transform.rotation.y));
     }
 
     async void save()
