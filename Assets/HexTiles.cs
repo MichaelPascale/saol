@@ -65,10 +65,40 @@ public class HexTile3D
         }
     
         // If a ceiling is specified (seventh bit), then duplicate the floor.
-        // if ((walls & 0x40) > 0) {
-        //     for (uint i = 0; i < 6; i++) vertices.Add(new Vector3((float)Cos(i*PI/3), 1, (float)Sin(i*PI/3)));
-        //     for (int i = 7; i < 13; i++) triangles.AddRange(new int[] {7, i + 1, i < 5 ? i + 2 : 8});
-        // }
+        if ((wflags & 0x40) > 0)
+        {
+            GameObject ceil = new GameObject("ceiling");
+            ceil.AddComponent<MeshFilter>();
+            ceil.AddComponent<MeshRenderer>();
+            ceil.AddComponent<MeshCollider>();
+            Mesh mesh = new Mesh();
+
+            List<Vector3> vertices = new List<Vector3>();
+            List<int> triangles = new List<int>();
+
+            // Counter clockwise.
+            vertices.Add(new Vector3(0,HEIGHT,0));
+            for (uint i = 0; i < 6; i++) vertices.Add(new Vector3((float)Cos(i * PI / 3), HEIGHT, (float)Sin(i * PI / 3)));
+
+            mesh.vertices = vertices.ToArray();
+
+            for (int i = 0; i < 6; i++) triangles.AddRange(new int[] { 0, i + 1, i < 5 ? i + 2 : 1 });
+            mesh.triangles = triangles.ToArray();
+
+            Vector2[] uvs = new Vector2[7];
+            for (int i = 0; i < 7; i++) uvs[i] = new Vector2(vertices[i].x / 2 + .5f, vertices[i].z / 2 + .5f);
+            mesh.uv = uvs;
+
+            mesh.RecalculateNormals();
+            ceil.GetComponent<MeshFilter>().mesh = mesh;
+            ceil.GetComponent<MeshCollider>().sharedMesh = mesh;
+            
+            ceil.transform.parent = gobj.transform;
+            
+            if (materials != null && materials.Length > 0) {
+                ceil.GetComponent<MeshRenderer>().material = materials[materials.Length - 1]; // The last material defines the ceiling.
+            }
+        }
 
         // Add a wall on the far face of each triangle, according to the walls flag.
         // Six binary flags (two octal digits) set the clockwise wall presence:
@@ -155,20 +185,19 @@ public class HexTiles : MonoBehaviour
 
     public Material mat_walls;
     public Material mat_floor;
+
+    public Material mat_ceil;
+
     void Start()
     {
-        Material[] materials = {mat_floor, mat_walls};
+        Material[] materials = {mat_floor, mat_walls, mat_ceil};
         // HexTile3D h = new HexTile3D("test hex", Vector3.zero, 0x37, materials);
         // new HexTile3D("northeast", new Vector3(1.5f, 0, (float)Sqrt(3)/2), 0x3A, materials);
         // new HexTile3D("east", new Vector3(3, 0, 0), 0x1F, materials);
 
-                new HexTile3D("0", HexTile3D.ax2cart(0,0), 0xFF, materials);
-                new HexTile3D("x1", HexTile3D.ax2cart(1,0), 0xFF, materials);
-                new HexTile3D("z1", HexTile3D.ax2cart(0,1), 0xFF, materials);
-                new HexTile3D("z2", HexTile3D.ax2cart(0,2), 0xFF, materials);
-
-
-        new HexTile3D("other", new Vector3(6, 1, 6), 0xFF, materials);
+        new HexTile3D("sw", HexTile3D.ax2cart(0,0), 0x40 + 0x0e, materials);
+        new HexTile3D("nw", HexTile3D.ax2cart(0,1), 0x40 + 0x3c, materials);
+        new HexTile3D("ne", HexTile3D.ax2cart(1,1), 0x40 + 0x31, materials);
 
         new HexTile3D("other", new Vector3(-6, 1, -6), 0x00, materials);
 
