@@ -20,6 +20,15 @@ public class HexTile3D
 
     private const float HEIGHT = 1;
     private enum Directions { SouthEast, South, SouthWest, NorthWest, North, NorthEast };
+    private static (int, int)[] offsets = new (int, int)[]
+    {
+        (1,  0), 
+        (0, -1), 
+        (-1,-1),
+        (-1, 0),
+        (0,  1),
+        (1,  1) 
+    };
 
     public HexTile3D(string name, Vector3 where, uint wflags = 0xFF, Material[] materials = null) {
         gobj = new GameObject(name);
@@ -178,6 +187,11 @@ public class HexTile3D
     {
         return new Vector3(1.5f * xax, y, (float) (-Sqrt(3)/2*xax + Sqrt(3)*dax));
 
+    }
+    public static (int, int) adjax(int xax, int dax, uint dir)
+    {
+        (int x, int d) = offsets[dir];
+        return (xax + x, dax + d);
     }
 
     // Given a numbered face (0-5), return the center vector.
