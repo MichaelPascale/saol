@@ -26,3 +26,10 @@ At time of writing, development was conduted under [Fedora 41 Workstation](https
   <br>
   <em>An enclosed space, generated from hexagonal tiles. Arbitrary stimuli appear on the walls, emulating an art gallery.</em>
 </p>
+
+## Stimuli
+
+The image set _Snodgrass and Vanderwart 'Like' Objects_ (SVLO) is courtesy of Michael J. Tarr, Carnegie Mellon University and is used here as licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/">CC BY-NC-SA 3.0</a> <img src="https://mirrors.creativecommons.org/presskit/icons/cc.svg" width=15><img src="https://mirrors.creativecommons.org/presskit/icons/by.svg" width=15><img src="https://mirrors.creativecommons.org/presskit/icons/nc.svg" width=15><img src="https://mirrors.creativecommons.org/presskit/icons/sa.svg" width=15>, retrieved from the [Tarr Lab website](https://sites.google.com/andrew.cmu.edu/tarrlab/stimuli).
+
+These stimuli were originally publised in:  
+Rossion, B., & Pourtois, G. (2004). Revisiting Snodgrass and Vanderwart's object set: The role of surface detail in basic-level object recognition. _Perception_, 33, 217-236.
