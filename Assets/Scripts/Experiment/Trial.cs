@@ -17,6 +17,10 @@ public class Trial : MonoBehaviour
     private uint trial;
     private DateTime t_init;
     private DateTime t_trial_onset;
+
+    private System.Random random = new();
+
+    private List<string> stimuli;
     void Start()
     {
         t_init = DateTime.Now;
@@ -27,6 +31,10 @@ public class Trial : MonoBehaviour
 
         List<GameObject> clearPaintings = new();
         List<GameObject> blurPaintings = new();
+
+        stimuli = new(Directory.GetFiles("Assets/Textures/SVLO", "*.png"));
+
+        List<Tuple<string, float>> pairs = random_sample();
 
         for (int i = 1; i <= 8; i++)
         {
@@ -39,7 +47,7 @@ public class Trial : MonoBehaviour
                 (float)Cos(4 * PI * i / 18) / 2 * 15
             );
 
-            p.GetComponent<Renderer>().material.mainTexture = ImportTexture.loadTexture("Assets/Textures/SVLO/001.png", 20);
+            p.GetComponent<Renderer>().material.mainTexture = ImportTexture.loadTexture(pairs[i - 1].Item1, pairs[i - 1].Item2);
             p.GetComponent<Renderer>().material.SetFloat("_Metallic", 0f);
             p.GetComponent<Renderer>().material.SetFloat("_Smoothness", .1f);
 
@@ -67,12 +75,12 @@ public class Trial : MonoBehaviour
             p.transform.eulerAngles = new Vector3(-90, 40 * i + 90, 0); // Rotate to face left wall of arm
             p.transform.position = new Vector3(
                 // offset   x/z ratio      *  3/2 width of hall
-                (float)Sin(4 * PI * i / 18) / 2 * 15 * 5.5f + (float)(Cos(4 * PI * i / 18) * 1.5 * Sin(PI / 18) * 15),
+                (float)Sin(4 * PI * i / 18) / 2 * 15 * 5.5f + (float)(Cos(4 * PI * i / 18) * 1.45 * Sin(PI / 18) * 15),
                 1.5f,
-                (float)Cos(4 * PI * i / 18) / 2 * 15 * 5.5f - (float)(Sin(4 * PI * i / 18) * 1.5 * Sin(PI / 18) * 15)
+                (float)Cos(4 * PI * i / 18) / 2 * 15 * 5.5f - (float)(Sin(4 * PI * i / 18) * 1.45 * Sin(PI / 18) * 15)
             );
 
-            p.GetComponent<Renderer>().material.mainTexture = ImportTexture.loadTexture("Assets/Textures/SVLO/001.png", 0);
+            p.GetComponent<Renderer>().material.mainTexture = ImportTexture.loadTexture(pairs[i - 1].Item1, 0);
             p.GetComponent<Renderer>().material.SetFloat("_Metallic", 0f);
             p.GetComponent<Renderer>().material.SetFloat("_Smoothness", .1f);
 
@@ -147,6 +155,26 @@ public class Trial : MonoBehaviour
         }
 
 
+    }
+
+    List<Tuple<string, float>> random_sample()
+    {
+        List<Tuple<string, float>> ret = new();
+        int[] k = { 0, 1, 2, 3, 4, 5, 6, 7 };
+
+        for (int s = 1; s <= 8; s++)
+        {
+            float blur = 10f * (float)Pow(40f / 10f, k[s-1] / 7f);
+            Debug.Log("blur: " + blur);
+
+            int i = random.Next(stimuli.Count);
+            string stim = stimuli[i];
+            stimuli.RemoveAt(i);
+
+            ret.Add(new Tuple<string, float>(stim, blur));
+        }
+
+        return ret;
     }
 
 }
