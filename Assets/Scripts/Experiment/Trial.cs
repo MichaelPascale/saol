@@ -21,6 +21,7 @@ public class Trial : MonoBehaviour
     private System.Random random = new();
 
     private List<string> stimuli;
+    private TableWriter<Tuple<string, float>> data_trial_order;
     void Start()
     {
         t_init = DateTime.Now;
@@ -35,6 +36,9 @@ public class Trial : MonoBehaviour
         stimuli = new(Directory.GetFiles("Assets/Textures/SVLO", "*.png"));
 
         List<Tuple<string, float>> pairs = random_sample();
+        data_trial_order = new(new string[2] { "image", "sigma" }, tuple => $"{tuple.Item1}\t{tuple.Item2}");
+        data_trial_order.append(pairs);
+        data_trial_order.write("pairs.tsv");
 
         for (int i = 1; i <= 8; i++)
         {
