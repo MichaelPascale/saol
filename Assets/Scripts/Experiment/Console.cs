@@ -13,6 +13,7 @@ using UnityEngine;
 public class SAOLConsole : MonoBehaviour
 {
     public bool visible = false;
+    public bool appeared = false;
 
     // Command History
     private List<string> _history = new List<string>();
@@ -104,6 +105,10 @@ public class SAOLConsole : MonoBehaviour
             80
         );
 
+        if (appeared) {
+            GUI.FocusControl("command");
+            appeared = false;
+        }
     }
 
     string handle_command(string cmdline)
@@ -154,6 +159,7 @@ public class SAOLConsole : MonoBehaviour
     public void toggle_visibility()
     {
         visible = !visible;
+        appeared = visible;
     }
 
 }
