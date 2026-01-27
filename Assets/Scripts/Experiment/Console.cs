@@ -2,7 +2,7 @@
  * Text console interface for researcher commands and debugging.
  *
  * Copyright (c) 2026, Michael P. Pascale <mpascale@bu.edu>.
- * MIT Licensed.
+ * SPDX-License-Identifier: MIT
  */
 
 using System;
@@ -30,11 +30,12 @@ public class SAOLConsole : MonoBehaviour
     
 
     // Connected Components
-    public Trial experiment;
+    public SAOLExperiment experiment;
     private InputSystem_Actions controls;
 
     void Awake()
     {
+        // The escape key should be mapped to a ConsoleHUD in the input system.
         controls = new InputSystem_Actions();
         controls.Enable();
         controls.Player.ConsoleHUD.performed += _ => toggle_visibility();
@@ -72,10 +73,6 @@ public class SAOLConsole : MonoBehaviour
         for (int j = 0; j<_history.Count; j++) 
             message += _history[j] + "\n" + _results[j] + "\n";
 
-        // GUI.Label(
-        //     new Rect(0,0,width_px-10,line_px*2*_history.Count+line_px),
-        //     message
-        // );
         GUI.TextArea(
             new Rect(0,0,width_px-25,line_px*2*_history.Count+line_px),
             message
@@ -138,8 +135,7 @@ public class SAOLConsole : MonoBehaviour
                 if (args.Length > 1)
                     filename = args[1];
 
-                experiment.data_behavior.write(filename);
-                return "Saved to '" + Path.Combine(Application.persistentDataPath, filename) + "'";
+                return experiment.cmd_save(filename);;
             
             case "start":
                 return "Not implemented.";
