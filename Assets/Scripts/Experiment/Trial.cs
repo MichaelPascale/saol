@@ -181,4 +181,8 @@ public class Trial : MonoBehaviour
         return ret;
     }
 
-}
+    public override string ToString()
+    {
+        return $"trial: {trial}, init: {t_init}, onset: {t_trial_onset}, stimuli: {stimuli.Count}";
+    }
+
