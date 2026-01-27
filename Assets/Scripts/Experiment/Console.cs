@@ -106,19 +106,41 @@ public class SAOLConsole : MonoBehaviour
 
     }
 
-    string handle_command(string command)
+    string handle_command(string cmdline)
     {
 
-        switch (command)
+        string[] args = cmdline.Split(" ");
+
+        switch (args[0])
         {
+            case "debug":
+                return experiment.ToString();
+            
+            case "demo":
+                return "Not implemented.";
+
             case "help":
-                return "Available commands: start, stop, save, show, quit, debug, demo, help.";
+                return "Available commands: debug, demo, help, load-stimuli, save, start, stop, quit.";
+            
+            case "load-stimuli":
+                return "Not implemented.";
 
             case "save":
+
                 string timestamp = DateTime.UtcNow.ToString("yyyyMMdd'T'HHmmss'Z'");
                 string filename  = "PoseData_" + timestamp + ".tsv.gz";
+
+                if (args.Length > 1)
+                    filename = args[1];
+
                 experiment.data_behavior.write(filename);
                 return "Saved to '" + Path.Combine(Application.persistentDataPath, filename) + "'";
+            
+            case "start":
+                return "Not implemented.";
+
+            case "stop":
+                return "Not implemented.";
 
             case "quit":
                 Application.Quit();
