@@ -30,10 +30,11 @@ public class SAOLConsole : MonoBehaviour
 
     // Connected Components
     public Trial experiment;
-    private InputSystem_Actions controls = new InputSystem_Actions();
+    private InputSystem_Actions controls;
 
     void Awake()
     {
+        controls = new InputSystem_Actions();
         controls.Enable();
         controls.Player.ConsoleHUD.performed += _ => toggle_visibility();
     }
@@ -115,7 +116,7 @@ public class SAOLConsole : MonoBehaviour
 
             case "save":
                 string timestamp = DateTime.UtcNow.ToString("yyyyMMdd'T'HHmmss'Z'");
-                string filename  = "PoseData_" + timestamp + ".tsv";
+                string filename  = "PoseData_" + timestamp + ".tsv.gz";
                 experiment.data_behavior.write(filename);
                 return "Saved to '" + Path.Combine(Application.persistentDataPath, filename) + "'";
 
