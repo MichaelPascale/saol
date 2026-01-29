@@ -109,6 +109,33 @@ public class PCRM : SAOLExperiment
         
     }
 
+    public string cmd_test_data()
+    {
+        for (int i=0; i < (PREALLOC_SIZE_TRAJ * 3.5); i++)
+        trajectory_data.Add(new PositionData(1,0,2f,2f,90f));
+        return "Added fake records to test save functions.";
+    }
+
+    public string cmd_test_stim()
+    {
+        for (uint i = 1; i <= ARMS; i++)
+        {
+            stimuli_inner[i-1] = new PCRMStim(i, $"Assets/Textures/SVLO/00{i}.png");
+            stimuli_outer[i-1] = new PCRMStimOuter(i, $"Assets/Textures/SVLO/01{i}.png");
+            
+        }
+        return "Loaded SVLO 1-8 as a test.";
+    }
+
+    public string cmd_test_clear_stim()
+    {
+        for (uint i = 0; i < ARMS; i++){
+            stimuli_inner[i].Dispose();
+            stimuli_inner[i] = null;
+        }
+        return "Cleared stimuli.";
+    }
+
     private void write_data(string path)
     {
         if (!path.EndsWith(".tsv.gz"))
