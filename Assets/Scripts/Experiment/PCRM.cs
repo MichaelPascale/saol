@@ -5,6 +5,14 @@
  * SPDX-License-Identifier: MIT
  */
 
+using System;
+using System.IO;
+using System.Text;
+using System.IO.Compression;
+using System.Collections.Generic;
+
+using static System.Math;
+
 using UnityEngine;
 
 public class PCRM : SAOLExperiment
@@ -14,8 +22,8 @@ public class PCRM : SAOLExperiment
     public const uint SIDES = 19;
     public const float STIM_Y = 2;
 
-    private StimulusImageInner[ARMS] stimuli_inner;
-    private StimulusImageOuter[ARMS] stimuli_outer; 
+    public const int PREALLOC_SIZE_TRAJ = 216000; // 60Hz for 1h.
+    private List<PositionData> trajectory_data = new List<PositionData>(PREALLOC_SIZE_TRAJ);
 
     // Start the experiment session. Triggered from the command line implemented in Console.
     public override string cmd_start()
@@ -26,7 +34,7 @@ public class PCRM : SAOLExperiment
         if (mode == Mode.Uninitialized)
             return "An experiment has not been initialized";
         
-        start();
+        onstart();
 
         return "Began at " + t_init + ".";
     }
@@ -37,9 +45,20 @@ public class PCRM : SAOLExperiment
         if (mode != Mode.Running)
             return "An experiment was not running.";
 
-        stop();
+        onstop();
 
         return "Stopped.";
+    }
+
+    // Save the session's data.
+    public override string cmd_save(string path)
+    {
+        if (trajectory_data.Count == 0)
+            return "No data to save.";
+
+        write_data(path);
+
+        return $"Saved to '{path}'";
     }
     
     // Load a .TSV containing the trial orderings.
@@ -53,7 +72,7 @@ public class PCRM : SAOLExperiment
         Debug.Log("loaded file with headers: " + string.Join(' ', names));
 
         int n = lines.Length - 1;    // Excluding the header row.
-        if (lines.Last() == "") n--; // Excluding an empty last line.
+        if (lines[n] == "") n--; // Excluding an empty last line.
 
         order.trial     = new int[n];
         order.arm       = new int[n];
@@ -73,6 +92,8 @@ public class PCRM : SAOLExperiment
 
         order.n_trials = order.trial[n-1];
         order.n_arms   = order.arm[n-1];
+
+        mode = Mode.Stopped;
         
         return "Loaded order file.";
     }
@@ -89,37 +110,57 @@ public class PCRM : SAOLExperiment
         
     }
 
-};
-
-public struct OrderTable
-{
-    public int n_trials;
-    public int n_arms;
-    public int[] trial;
-    public int[] arm;
-    public int[] blurlevel;
-    public string[] uniqueID;
-    public float[] sigma;
-};
-
-public abstract class StimulusImage
-{
-    public StimulusImage(string filename, uint position)
+    private void write_data(string path)
     {
-        
+        if (!path.EndsWith(".tsv.gz"))
+            throw new ArgumentOutOfRangeException("Provided filename must have extension 'tsv.gz'.");
+
+        using (FileStream stream = File.Create(Path.Combine(Application.persistentDataPath, path)))
+        using (GZipStream compressor = new GZipStream(stream, System.IO.Compression.CompressionLevel.Optimal))
+        using (StreamWriter writer = new StreamWriter(compressor, Encoding.UTF8))
+        {
+            foreach (var datapoint in trajectory_data)
+                writer.WriteLine(datapoint);
+        }
+
+        return;
     }
-
-    public abstract Vector3 get_coordinates(uint position);
-    public abstract float get_orientation_y(uint position);
-};
-
-// Stimuli at the arm enterances (blurred).
-public class StimulusImageInner : StimulusImage
-{
-    public override Vector3 get_coordinates(uint position)
+    public struct OrderTable
     {
-        if (position > ARMS)
-            throw new  ArgumentOutOfRangeException("position", $"Position of {position} exceeds the number of arms (8).");
+        public int n_trials;
+        public int n_arms;
+        public int[] trial;
+        public int[] arm;
+        public int[] blurlevel;
+        public string[] uniqueID;
+        public float[] sigma;
+    };
+
+    public struct PositionData
+    {
+        public PositionData(uint trial, double time, float x, float z, float roty)
+        {
+            this.trial = trial;
+            this.time = time;
+            this.x = x;
+            this.z = z;
+            this.roty = roty;
+        }
+        public uint trial;
+        public double time;
+        public float x;
+        public float z;
+        public float roty;
+
+        public static implicit operator string(PositionData data)
+        {
+            List<string> values = new List<string>(5);
+            foreach (var field in typeof(PositionData).GetFields()) {
+                values.Add(field.GetValue(data).ToString());
+            }
+            return string.Join('\t', values);
+        }
+    };
 
         // if (position == 0)
         //     return new Vector3(0, STIM_Y, 0);

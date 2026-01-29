@@ -30,7 +30,7 @@ public class SAOLConsole : MonoBehaviour
     
 
     // Connected Components
-    public SAOLExperiment experiment;
+    public PCRM experiment;
     private InputSystem_Actions controls;
 
     void Awake()
@@ -122,10 +122,17 @@ public class SAOLConsole : MonoBehaviour
                 return "Not implemented.";
 
             case "help":
-                return "Available commands: debug, demo, help, load-stimuli, save, start, stop, quit.";
+                return "Available commands: debug, demo, help, load-stimuli, load-order, save, start, stop, quit.";
             
             case "load-stimuli":
                 return "Not implemented.";
+            
+            case "load-order":
+                if (args.Length == 1)
+                    return "Requires second argument.";
+
+                return experiment.cmd_load_order(args[1]);
+
 
             case "save":
 
@@ -138,10 +145,10 @@ public class SAOLConsole : MonoBehaviour
                 return experiment.cmd_save(filename);;
             
             case "start":
-                return "Not implemented.";
+                return experiment.cmd_start();
 
             case "stop":
-                return "Not implemented.";
+                return experiment.cmd_stop();
 
             case "quit":
                 Application.Quit();
