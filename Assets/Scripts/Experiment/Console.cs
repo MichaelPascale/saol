@@ -87,8 +87,14 @@ public class SAOLConsole : MonoBehaviour
             string timestamp = DateTime.UtcNow.ToString("yyyyMMdd'T'HHmmss'Z'");
             _history.Add(timestamp+": " + command);
 
-            // TODO implement handle commands
-            _results.Add(handle_command(command));
+            try {
+                _results.Add(handle_command(command));
+            } catch (Exception e)
+            {
+                Debug.LogError(e);
+                _results.Add(e.Message);
+            }
+            
             scroll.y = line_px*2*_history.Count+line_px;
 
             command = "";
