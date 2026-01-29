@@ -57,7 +57,7 @@ public class SAOLConsole : MonoBehaviour
         // FPS and Diagnostics
         GUI.Label(
             new Rect(l_border_px+1, t_border_px+line_px+1, width_px-2, line_px*2),
-            String.Format("{0,5:F1}fps  {1,8:F3}s elapsed", 1/Time.deltaTime, Time.realtimeSinceStartup)
+            String.Format("{0,5:F1}fps  {1,8:F3}s application runtime", 1/Time.deltaTime, Time.realtimeSinceStartup)
         );
 
         // Scroll Box for History
@@ -159,6 +159,16 @@ public class SAOLConsole : MonoBehaviour
             case "quit":
                 Application.Quit();
                 return "Shutting down."; // Technically this is unreachable.
+            
+            // Undocumented test commands.
+            case "test-data":
+                return experiment.cmd_test_data();
+
+            case "test-stim":
+                return experiment.cmd_test_stim();
+            
+            case "test-clear":
+                return experiment.cmd_test_clear_stim();
 
             default:
                 return "Improper command.";
