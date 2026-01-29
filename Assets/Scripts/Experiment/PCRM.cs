@@ -11,21 +11,16 @@ using System.Text;
 using System.IO.Compression;
 using System.Collections.Generic;
 
-using static System.Math;
-
 using UnityEngine;
 
 public class PCRM : SAOLExperiment
 {
     private OrderTable order;
     public const uint ARMS = 8;
-    public const uint SIDES = 19;
-    public const float STIM_Y = 2;
-
     public const int PREALLOC_SIZE_TRAJ = 216000; // 60Hz for 1h.
 
-    private StimulusImage[] stimuli_inner = new StimulusImageInner[ARMS];
-    private StimulusImage[] stimuli_outer = new StimulusImageOuter[ARMS]; 
+    private readonly PCRMStim[] stimuli_inner = new PCRMStim[ARMS];
+    private readonly PCRMStim[] stimuli_outer = new PCRMStim[ARMS]; // FIXME: Outer.
 
     private List<PositionData> trajectory_data = new List<PositionData>(PREALLOC_SIZE_TRAJ);
 
@@ -165,57 +160,4 @@ public class PCRM : SAOLExperiment
             return string.Join('\t', values);
         }
     };
-
-    public abstract class StimulusImage
-    {
-        // FIXME: These should be static but abstract static methods are not supported until C#11.
-        public abstract Vector3 get_coordinates(uint position);
-        public abstract float get_orientation_y(uint position);
-    };
-
-    // Stimuli at the arm enterances (blurred).
-    public class StimulusImageInner : StimulusImage
-    {
-        public override Vector3 get_coordinates(uint position)
-        {
-            if (position > ARMS)
-                throw new  ArgumentOutOfRangeException("position", $"Position of {position} exceeds the number of arms (8).");
-
-            // if (position == 0)
-            //     return new Vector3(0, STIM_Y, 0);
-
-            return new Vector3(
-                (float)Sin(4 * PI * position / 18) / 2 * 15,
-                STIM_Y,
-                (float)Cos(4 * PI * position / 18) / 2 * 15
-            );
-        }
-
-        public override float get_orientation_y(uint position)
-        {
-            return 40 * (position - 1);
-        }
-    };
-
-    // Stimuli at the arm ends (clarified).
-    public class StimulusImageOuter : StimulusImage
-    {
-        public override Vector3 get_coordinates(uint position)
-        {
-            if (position > ARMS)
-                throw new  ArgumentOutOfRangeException(nameof(position), $"Position of {position} exceeds the number of arms (8).");
-
-            return new Vector3(
-                (float)Sin(4 * PI * position / 18) / 2 * 15 * 5.5f + (float)(Cos(4 * PI * position / 18) * 1.45 * Sin(PI / 18) * 15),
-                STIM_Y,
-                (float)Cos(4 * PI * position / 18) / 2 * 15 * 5.5f - (float)(Sin(4 * PI * position / 18) * 1.45 * Sin(PI / 18) * 15)
-            );
-        }
-
-        public override float get_orientation_y(uint position)
-        {
-            return 40 * (position - 1) + 90;
-        }
-    };
-
 };
