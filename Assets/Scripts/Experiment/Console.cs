@@ -8,6 +8,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 public class SAOLConsole : MonoBehaviour
 {
@@ -30,14 +31,15 @@ public class SAOLConsole : MonoBehaviour
 
     // Connected Components
     public PCRM experiment;
-    private InputSystem_Actions controls;
+    private InputAction toggleAction;
 
     void Awake()
     {
-        // The escape key should be mapped to a ConsoleHUD in the input system.
-        controls = new InputSystem_Actions();
-        controls.Enable();
-        controls.Player.ConsoleHUD.performed += _ => toggle_visibility();
+        toggleAction = new InputAction("SAOL Open Console");
+        toggleAction.AddBinding("<Keyboard>/escape");
+        toggleAction.AddBinding("<Gamepad>/start");
+        toggleAction.started += ctx => toggle_visibility();
+        toggleAction.Enable();
     }
 
     void OnGUI()
