@@ -7,7 +7,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO;
 using UnityEngine;
 
 public class SAOLConsole : MonoBehaviour
@@ -82,23 +81,31 @@ public class SAOLConsole : MonoBehaviour
 
         // Handle Commands
         // Per https://docs.unity3d.com/ScriptReference/GUI.SetNextControlName.html
-        if (Event.current.type == EventType.KeyDown && (Event.current.keyCode == KeyCode.Return) && GUI.GetNameOfFocusedControl() == "command"){
+        if (GUI.GetNameOfFocusedControl() == "command" && Event.current.type == EventType.KeyDown){
 
-            string timestamp = DateTime.UtcNow.ToString("yyyyMMdd'T'HHmmss'Z'");
-            _history.Add(timestamp+": " + command);
+            if (Event.current.keyCode == KeyCode.Return) {
+                string timestamp = DateTime.UtcNow.ToString("yyyyMMdd'T'HHmmss'Z'");
+                _history.Add(timestamp+": " + command);
 
-            try {
-                _results.Add(handle_command(command));
-            } catch (Exception e)
-            {
-                Debug.LogError(e);
-                _results.Add(e.Message);
+                try {
+                    _results.Add(handle_command(command));
+                } catch (Exception e)
+                {
+                    Debug.LogError(e);
+                    _results.Add(e.Message);
+                }
+                
+                scroll.y = line_px*2*_history.Count+line_px;
+
+                command = "";
+                Event.current.Use();
             }
             
-            scroll.y = line_px*2*_history.Count+line_px;
-
-            command = "";
-            Event.current.Use();
+            if (Event.current.keyCode == KeyCode.UpArrow) {
+                if (_history.Count > 0)
+                    command = _history[_history.Count-1].Substring(18);
+                Event.current.Use();
+            } 
         }
 
         GUI.SetNextControlName("command");
