@@ -23,7 +23,7 @@ public class PCRMStim : IDisposable {
     protected readonly GameObject gobj;
     protected readonly Renderer renderer;
 
-    public PCRMStim(uint position, string imgpath, float scale=.15f) {
+    public PCRMStim(uint position, string imgpath, float scale=.15f, float blur = 0) {
         this.position = position;
 
         gobj = GameObject.CreatePrimitive(PrimitiveType.Plane);
@@ -37,7 +37,7 @@ public class PCRMStim : IDisposable {
 
         renderer.material.shader = Shader.Find("Universal Render Pipeline/Unlit");
 
-        renderer.material.mainTexture = ImportTexture.loadTexture(imgpath, 0);
+        renderer.material.mainTexture = ImportTexture.loadTexture(imgpath, blur);
         // renderer.material.SetFloat("_Metallic", 0f);
         // renderer.material.SetFloat("_Smoothness", .1f);
         // renderer.material.SetInteger("_Cull", (int) CullMode.Back);
@@ -89,7 +89,7 @@ public class PCRMStim : IDisposable {
 
 
 public class PCRMStimOuter : PCRMStim {
-    public PCRMStimOuter(uint position, string imgpath, float scale = 0.15F) : base(position, imgpath, scale) {}
+    public PCRMStimOuter(uint position, string imgpath, float scale = 0.15F, float blur = 0) : base(position, imgpath, scale, blur) {}
     
 
     // The calculation of coordinates and orientation will be different for the outer/arm-end stimuli.
