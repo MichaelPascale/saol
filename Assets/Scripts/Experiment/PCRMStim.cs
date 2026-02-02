@@ -41,6 +41,10 @@ public class PCRMStim : IDisposable {
         // renderer.material.SetFloat("_Metallic", 0f);
         // renderer.material.SetFloat("_Smoothness", .1f);
         // renderer.material.SetInteger("_Cull", (int) CullMode.Back);
+        renderer.material.SetColor("_BaseColor", Color.white);
+
+        UnityEngine.Object.DestroyImmediate(gobj.GetComponent<Collider>());
+
     }
 
     public void Dispose()
