@@ -158,6 +158,7 @@ public class PCRM : SAOLExperiment
                 overlay.clear();
                 overlay.hide();
                 place_stimuli();
+                StartCoroutine(rotate_player(1));
             },
             6
         ));
@@ -199,6 +200,29 @@ public class PCRM : SAOLExperiment
         overlay.text("All floors complete.", Color.green);
         overlay.show();
         onstop();
+    }
+
+    // Move the player through the forced rotation to face each arm at the beginning of the trial.
+    private IEnumerator rotate_player(float time_s_each)
+    {
+        // Go backwards, alternating each trial.
+        float counter = -1 + 2 * (trial % 2);
+
+        for (int i = 0; i <= ARMS; i++) {
+            yield return new WaitForSecondsRealtime(time_s_each);
+
+            float elapsed = 0;
+
+            while (elapsed < time_s_each) // NOTE: The rotation and look duration are the same.
+            {
+                elapsed += Time.unscaledDeltaTime;
+                float y_rot = Mathf.LerpAngle(i*counter*40, (i+1)*counter*40, elapsed/time_s_each);
+                player.look(new Vector3(0, y_rot, 0));
+                yield return null;
+            }
+
+            player.look(new Vector3(0, (i+1)*counter*40, 0));            
+        }
     }
 
     private void place_stimuli()
