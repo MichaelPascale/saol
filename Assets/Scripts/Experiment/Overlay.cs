@@ -5,6 +5,7 @@
  * MIT Licensed.
  */
 
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -15,6 +16,8 @@ public class SAOLOverlay : MonoBehaviour
     protected Canvas canvas;
     protected Image bg;
     protected List<GameObject> fg_elements = new List<GameObject>();
+
+    private const float max_alpha = 0.75f;
     
     void Start()
     {
@@ -24,7 +27,7 @@ public class SAOLOverlay : MonoBehaviour
         var obj = new GameObject("Background Image");
         obj.transform.SetParent(transform);
         bg = obj.AddComponent<Image>();
-        bg.color = new Color(0,0,0,.75f);
+        bg.color = new Color(0,0,0,max_alpha);
 
         RectTransform rect = obj.GetComponent<RectTransform>();
         rect.anchorMin = Vector2.zero;
@@ -75,4 +78,24 @@ public class SAOLOverlay : MonoBehaviour
         fg_elements.Clear();
     }
 
+    public void fadein(float time_s)
+    {
+        bg.color = new Color(0,0,0,0);
+        show();
+        StartCoroutine(fade(time_s));
+    }
+
+    private IEnumerator fade(float duration)
+    {
+        float elapsed = 0f;
+
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            bg.color = Color.Lerp(new Color(0,0,0,0), new Color(0,0,0,max_alpha), elapsed / duration);
+            yield return null;
+        }
+
+        bg.color = new Color(0,0,0,max_alpha);
+    }
 }
