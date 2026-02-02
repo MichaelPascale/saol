@@ -202,6 +202,12 @@ public class PCRM : SAOLExperiment
         onstop();
     }
 
+    protected override void log()
+    {
+        Vector3 p = player.get_position();
+        trajectory_data.Add(new PositionData(trial, elapsed_trial_s, p.x, p.z, player.get_heading()));
+    }
+
     // Move the player through the forced rotation to face each arm at the beginning of the trial.
     private IEnumerator rotate_player(float time_s_each)
     {
