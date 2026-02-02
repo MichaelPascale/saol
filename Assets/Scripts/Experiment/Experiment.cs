@@ -37,6 +37,7 @@ public abstract class SAOLExperiment : MonoBehaviour
 
         elapsed_s = DateTime.Now.Subtract(t_init).TotalSeconds;
         elapsed_trial_s = DateTime.Now.Subtract(t_trial).TotalSeconds;
+        log();
     }
 
     protected void onstart()
@@ -104,6 +105,7 @@ public abstract class SAOLExperiment : MonoBehaviour
     protected abstract void setup_trial();
     protected abstract void end_trial();
     protected abstract void end_session();
+    protected abstract void log();
 
     public override string ToString()
     {
