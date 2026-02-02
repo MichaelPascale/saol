@@ -6,10 +6,16 @@
  */
 
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 public abstract class SAOLExperiment : MonoBehaviour
 {
+    public SAOLPlayer player;
+    public SAOLConsole console;
+    public SAOLOverlay overlay;
 
     public enum Mode { Uninitialized, Stopped, Running }
     protected Mode mode;
@@ -42,28 +48,62 @@ public abstract class SAOLExperiment : MonoBehaviour
         
         t_trial = DateTime.Now;
         elapsed_trial_s = 0;
+
+        console.toggle_visibility();
+
+        setup_session();
     }
 
     protected void onstop()
     {
         mode = Mode.Stopped;
+        StopAllCoroutines();
     }
 
     protected void next_trial()
     {
-        trial++;
+        if (trial > 0)
+            end_trial();
 
-        if (trial == n_trials)
-            // FIXME: Implement onend() method to handle this.
-            Console.WriteLine("ENDED");
+        trial++;
+        overlay.clear();
+
+        if (trial > n_trials) {
+            end_session();
+            return;
+        }
 
         t_trial = DateTime.Now;
         elapsed_trial_s = 0;
+
+        setup_trial();
+    }
+
+    protected IEnumerator wait_then_execute(Action action, float time_s)
+    {
+        yield return new WaitForSecondsRealtime(time_s);
+        action();
+    }
+
+    protected IEnumerator wait_for_space(Action action, string message = "Press space to begin.")
+    {
+        overlay.clear();
+        overlay.text(message);
+        overlay.show();
+        yield return new WaitUntil(() => Keyboard.current.spaceKey.wasPressedThisFrame);
+
+        overlay.clear();
+        action();
     }
 
     public abstract string cmd_save(string path);
     public abstract string cmd_start();
     public abstract string cmd_stop();
+
+    protected abstract void setup_session();
+    protected abstract void setup_trial();
+    protected abstract void end_trial();
+    protected abstract void end_session();
 
     public override string ToString()
     {
