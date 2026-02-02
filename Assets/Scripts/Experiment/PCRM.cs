@@ -99,7 +99,7 @@ public class PCRM : SAOLExperiment
         order.n_trials = order.trial[n-1];
         order.n_arms   = order.arm[n-1];
 
-        mode = Mode.Stopped;
+        n_trials = (uint) order.n_trials;
         
         return "Loaded order file.";
     }
