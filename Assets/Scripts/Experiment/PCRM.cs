@@ -89,6 +89,11 @@ public class PCRM : SAOLExperiment
             order.blurlevel[i]    = int.Parse(fields[2]);
             order.uniqueID[i]     = fields[3];
             order.sigma[i]        = float.Parse(fields[4]);
+
+            // Check that the image exists.
+            string imgpath = Path.Join(stimuli_path, $"{fields[3]}_{fields[2]}.jpg");
+            if (!File.Exists(imgpath))
+                throw new FileNotFoundException($"Could not locate {imgpath} needed by order file {file}");
         }
 
         order.n_trials = order.trial[n-1];
