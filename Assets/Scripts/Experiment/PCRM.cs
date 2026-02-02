@@ -19,6 +19,8 @@ public class PCRM : SAOLExperiment
     public const uint ARMS = 8;
     public const int PREALLOC_SIZE_TRAJ = 216000; // 60Hz for 1h.
 
+    public string stimuli_path; // Path to directory.
+
     private readonly PCRMStim[] stimuli_inner = new PCRMStim[ARMS];
     private readonly PCRMStim[] stimuli_outer = new PCRMStim[ARMS]; // FIXME: Outer.
 
@@ -97,16 +99,52 @@ public class PCRM : SAOLExperiment
         return "Loaded order file.";
     }
 
-    // Place a stimulus image at a particular position.
-    public string cmd_load_stimulus(string file, int position)
+    public string cmd_demo()
     {
-        stimuli_inner[position] = null; // TODO: Is a nulled item garbage-collected? Are corresponding GameObjects desroyed?
+        clear_stimuli();
+        for (uint i = 0; i < ARMS; i++)
+        {
+            stimuli_inner[i] = new PCRMStim(i+1, $"Assets/Textures/SVLO/00{i+1}.png", blur: 10);
+            stimuli_outer[i] = new PCRMStimOuter(i+1, $"Assets/Textures/SVLO/00{i+1}.png");
+        }
+
+        return "SVLO demo loaded.";
+    }
+
+    // Place a stimulus image at a particular position.
+    public string cmd_load_stimulus(string file, uint position)
+    {
+        if (stimuli_inner[position - 1] != null)
+            stimuli_inner[position - 1].Dispose();
+        
+        stimuli_inner[position - 1] = new PCRMStim(position, file);
         return "Loaded stimulus.";
     }
 
     private void place_stimuli()
     {
-        
+        clear_stimuli();
+        for (uint i = 0; i < ARMS; i++)
+        {
+            stimuli_inner[i] = new PCRMStim(i+1, get_image_path(trial, i+1));
+            stimuli_outer[i] = new PCRMStimOuter(i+1, get_image_path(trial, i+1, true));
+        }
+    }
+    
+    private void clear_stimuli()
+    {
+        for (uint i = 0; i < ARMS; i++){
+            if (stimuli_inner[i] != null)
+            {
+                stimuli_inner[i].Dispose();
+                stimuli_inner[i] = null;
+            }
+            if (stimuli_outer[i] != null)
+            {
+                stimuli_outer[i].Dispose();
+                stimuli_outer[i] = null;
+            }
+        }
     }
 
     public string cmd_test_data()
@@ -129,10 +167,7 @@ public class PCRM : SAOLExperiment
 
     public string cmd_test_clear_stim()
     {
-        for (uint i = 0; i < ARMS; i++){
-            stimuli_inner[i].Dispose();
-            stimuli_inner[i] = null;
-        }
+        clear_stimuli();
         return "Cleared stimuli.";
     }
 
@@ -151,6 +186,36 @@ public class PCRM : SAOLExperiment
 
         return;
     }
+
+    private string get_image_path(uint trial, uint arm, bool clear = false)
+    {
+        if (order.uniqueID is null)
+            throw new InvalidOperationException("A trial order file has not been loaded.");
+
+        if (trial > order.n_trials)
+            throw new  ArgumentOutOfRangeException("trial");
+
+        if (arm > order.n_arms)
+            throw new  ArgumentOutOfRangeException("arm");
+
+        // TODO: Could use a different data structure for faster lookup.
+        for (uint i = 0; i < order.trial.Length; i++)
+        {
+            if (order.trial[i] != trial)
+                continue;
+
+            if (order.arm[i] != arm)
+                continue;
+            
+            if (clear)
+                return Path.Join(stimuli_path, $"{order.uniqueID[i]}.jpg");
+
+            return Path.Join(stimuli_path, $"{order.uniqueID[i]}_{order.blurlevel[i]}.jpg");
+        }
+
+        throw new  KeyNotFoundException($"Could not find a row in the order table matching trial {trial}, arm {arm}.");
+    }
+
     public struct OrderTable
     {
         public int n_trials;
