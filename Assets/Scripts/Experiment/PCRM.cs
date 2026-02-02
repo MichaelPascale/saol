@@ -260,6 +260,7 @@ public class PCRM : SAOLExperiment
         using (GZipStream compressor = new GZipStream(stream, System.IO.Compression.CompressionLevel.Optimal))
         using (StreamWriter writer = new StreamWriter(compressor, Encoding.UTF8))
         {
+            writer.WriteLine("trial\ttime\tx\tz\theading");
             foreach (var datapoint in trajectory_data)
                 writer.WriteLine(datapoint);
         }
