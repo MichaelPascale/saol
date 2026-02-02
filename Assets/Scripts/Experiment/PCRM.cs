@@ -126,6 +126,81 @@ public class PCRM : SAOLExperiment
         return "Loaded stimulus.";
     }
 
+    // Events occuring at the start and end of each trial and session.
+    // These are called by the base class and should not invoke any 
+    // base class methods.
+    protected override void setup_session()
+    {
+        trajectory_data.Clear();
+        clear_stimuli();
+        StartCoroutine(wait_for_space(next_trial));
+    }
+
+    protected override void setup_trial()
+    {
+        overlay.text("This is the next floor of the museum.");
+        overlay.show();
+
+        player.reset();
+        player.pause();
+
+        // Schedule events that occur within the trial.
+        StartCoroutine(wait_then_execute(
+            ()=>{
+                overlay.clear();
+                overlay.text("You may spend thirty seconds here.");
+            },
+            3
+        ));
+
+        StartCoroutine(wait_then_execute(
+            ()=>{
+                overlay.clear();
+                overlay.hide();
+                place_stimuli();
+            },
+            6
+        ));
+
+        StartCoroutine(wait_then_execute(
+            ()=>{
+                player.pause(); // unpause the player
+            },
+            18 + 6
+        ));
+
+        StartCoroutine(wait_then_execute(
+            ()=>{
+                overlay.fadein(5);
+            },
+            25 + 18 + 6
+        ));
+
+        StartCoroutine(wait_then_execute(
+            ()=>{
+                overlay.text("Time is up.");
+            },
+            30 + 18 + 6
+        ));
+
+        StartCoroutine(wait_then_execute(
+            next_trial,
+            32 + 18 + 6
+        ));
+    }
+
+    protected override void end_trial()
+    {
+        clear_stimuli();
+    }
+
+    protected override void end_session()
+    {
+        overlay.text("All floors complete.", Color.green);
+        overlay.show();
+        onstop();
+    }
+
     private void place_stimuli()
     {
         clear_stimuli();
