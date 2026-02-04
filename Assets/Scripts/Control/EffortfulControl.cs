@@ -7,6 +7,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.IO;
+using System.Text;
+using System.IO.Compression;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -27,6 +30,7 @@ public class EffortfulControl : MonoBehaviour
     private Queue<double> effort_recent_ds = new Queue<double>(N_RECENT);
     private double effort_last_t = 0;
     private double effort_rate = 0;
+    private double effort_rate_max = 1;
     private bool recording = false;
 
     public const int PREALLOC_SIZE_LOG = 216000;
@@ -36,11 +40,13 @@ public class EffortfulControl : MonoBehaviour
     {
         controller = GetComponent<CharacterController>();
 
-        effort_action = new InputAction("SAOLForwardEffortful");
-        effort_action.AddBinding("<Keyboard>/w");
+        
+
+        effort_action = new InputAction("SAOLEffortRTKey");
+        effort_action.AddBinding("<Keyboard>/enter");
         effort_action.AddBinding("<Gamepad>/buttonSouth");
 
-        effort_action.started += ctx => {
+        effort_action.started += ctx => {            
             double diff = ctx.time - effort_last_t;
             effort_last_t = ctx.time;
 
@@ -48,7 +54,7 @@ public class EffortfulControl : MonoBehaviour
             if (diff > 1)
             {
                 effort_recent_ds.Clear();
-                effort_rate = 0.25;
+                effort_rate = 0;
                 return;
             }
 
@@ -65,7 +71,7 @@ public class EffortfulControl : MonoBehaviour
             if (recording)
                 response_data.Add(ctx.time);
 
-            Debug.Log($"n = {effort_recent_ds.Count}, last rt = {diff, 5:F3}, avg rate = {effort_rate, 5:F3}, scaled rate = {effort_rate_scaled}");
+            Debug.Log($"n = {effort_recent_ds.Count}, last rt = {diff, 5:F3}, avg rate = {effort_rate, 5:F3}, scaled rate = {effort_rate / effort_rate_max}");
         };
 
         effort_action.Enable();
@@ -79,11 +85,14 @@ public class EffortfulControl : MonoBehaviour
 
         if (isPaused)
             return;
-        
-        effort_rate = Mathf.Lerp((float)effort_rate, 0, Time.deltaTime * 5f);
 
         // Move the character
-        Vector3 move = transform.forward * moveZ * (float) effort_rate_scaled * moveSpeed;
+        Vector3 move = transform.forward * moveZ * (float) (effort_rate/effort_rate_max) * moveSpeed;
+
+        // While the effort key has not been pressed, decay the press-rate.
+        effort_rate *= Mathf.Pow(0.5f, Time.deltaTime * 4);
+        if (effort_rate < 0.1)
+            effort_rate = 0;
         
         // Apply movement
         controller.Move(move * Time.deltaTime);
