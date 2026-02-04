@@ -27,8 +27,10 @@ public class EffortfulControl : MonoBehaviour
     private Queue<double> effort_recent_ds = new Queue<double>(N_RECENT);
     private double effort_last_t = 0;
     private double effort_rate = 0;
-    private double effort_rate_scaled = 0;
-    private double effort_rate_max = 0;
+    private bool recording = false;
+
+    public const int PREALLOC_SIZE_LOG = 216000;
+    private List<double> response_data = new List<double>(PREALLOC_SIZE_LOG);
 
     void Start()
     {
@@ -60,7 +62,8 @@ public class EffortfulControl : MonoBehaviour
             if (effort_rate > effort_rate_max)
                 effort_rate_max = effort_rate;
 
-            effort_rate_scaled = effort_rate / effort_rate_max;
+            if (recording)
+                response_data.Add(ctx.time);
 
             Debug.Log($"n = {effort_recent_ds.Count}, last rt = {diff, 5:F3}, avg rate = {effort_rate, 5:F3}, scaled rate = {effort_rate_scaled}");
         };
@@ -88,5 +91,31 @@ public class EffortfulControl : MonoBehaviour
         // Rotate character left/right
         float rotation = moveX * rotationSpeed * Time.deltaTime;
         transform.Rotate(0, rotation, 0);
+    }
+
+    public void save(string path)
+    {
+        if (!path.EndsWith(".tsv.gz"))
+            throw new ArgumentOutOfRangeException("Provided filename must have extension 'tsv.gz'.");
+
+        using (FileStream stream = File.Create(Path.Combine(Application.persistentDataPath, path)))
+        using (GZipStream compressor = new GZipStream(stream, System.IO.Compression.CompressionLevel.Optimal))
+        using (StreamWriter writer = new StreamWriter(compressor, Encoding.UTF8))
+        {
+            writer.WriteLine("time");
+            foreach (double t in response_data)
+                writer.WriteLine(t);
+        }
+    }
+
+    public void record()
+    {
+        response_data.Clear();
+        recording = true;
+    }
+
+    public void stop_record()
+    {
+        recording = false;
     }
 }

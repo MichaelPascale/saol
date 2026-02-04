@@ -16,6 +16,7 @@ using UnityEngine;
 public class PCRM : SAOLExperiment
 {
     private OrderTable order;
+    public EffortfulControl control;
     public const uint ARMS = 8;
     public const int PREALLOC_SIZE_TRAJ = 216000; // 60Hz for 1h.
 
@@ -47,7 +48,7 @@ public class PCRM : SAOLExperiment
             return "An experiment was not running.";
 
         onstop();
-
+        control.stop_record();
         return "Stopped.";
     }
 
@@ -58,6 +59,7 @@ public class PCRM : SAOLExperiment
             return "No data to save.";
 
         write_data(path);
+        control.save("effort" + DateTime.UtcNow.ToString("yyyyMMdd'T'HHmmss'Z'") + ".tsv.gz");
 
         return $"Saved to '{path}'";
     }
@@ -132,6 +134,7 @@ public class PCRM : SAOLExperiment
     protected override void setup_session()
     {
         trajectory_data.Clear();
+        control.record();
         clear_stimuli();
         StartCoroutine(wait_for_space(next_trial));
     }
@@ -199,13 +202,14 @@ public class PCRM : SAOLExperiment
     {
         overlay.text("All floors complete.", Color.green);
         overlay.show();
+        control.stop_record();
         onstop();
     }
 
     protected override void log()
     {
         Vector3 p = player.get_position();
-        trajectory_data.Add(new PositionData(trial, elapsed_trial_s, p.x, p.z, player.get_heading()));
+        trajectory_data.Add(new PositionData(trial, Time.realtimeSinceStartup, p.x, p.z, player.get_heading()));
     }
 
     // Move the player through the forced rotation to face each arm at the beginning of the trial.
