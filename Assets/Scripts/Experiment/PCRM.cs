@@ -73,7 +73,7 @@ public class PCRM : SAOLExperiment
     // NOTE: This assumes that the rows are sorted by trial and arm. It performs no checks.
     public string cmd_load_order(string file)
     {
-        string[] lines = File.ReadAllLines(file);
+        string[] lines = File.ReadAllLines(Path.Join(stimuli_path, "Parameters", file));
         
         string[] names = lines[0].Split('\t');
         Debug.Log("loaded file with headers: " + string.Join(' ', names));
@@ -288,6 +288,15 @@ public class PCRM : SAOLExperiment
         clear_stimuli();
         return "Cleared stimuli.";
     }
+
+    public string cmd_test_reset()
+    {
+        // FIXME: The reset method does not go to the right position.
+        player.reset();
+        return "Reset player position.";
+    }
+
+    // TODO: implement test for controlling overlay.
 
     private void write_data(string path)
     {

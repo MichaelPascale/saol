@@ -134,16 +134,19 @@ public class SAOLConsole : MonoBehaviour
                 return experiment.ToString();
             
             case "demo":
-                return "Not implemented.";
+                return experiment.cmd_demo();
 
             case "help":
-                return "Available commands: debug, demo, help, load-stimuli, load-order, save, start, stop, quit.";
+                return "Available commands: debug, demo, help, load-stim, load-order, save, start, stop, quit.";
             
-            case "load-stimuli":
-                return "Not implemented.";
+            case "load-stim":
+                if (args.Length != 3)
+                    return "Requires two arguments: file and position.";
+                
+                return experiment.cmd_load_stimulus(args[1], uint.Parse(args[2]));
             
             case "load-order":
-                if (args.Length == 1)
+                if (args.Length != 2)
                     return "Requires second argument.";
 
                 return experiment.cmd_load_order(args[1]);
@@ -178,6 +181,9 @@ public class SAOLConsole : MonoBehaviour
             
             case "test-clear":
                 return experiment.cmd_test_clear_stim();
+            
+            case "test-reset":
+                return experiment.cmd_test_reset();
 
             default:
                 return "Improper command.";
