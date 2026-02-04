@@ -52,7 +52,7 @@ public class SAOLConsole : MonoBehaviour
         // Overlay and Title
         GUI.Box (
             new Rect(l_border_px, t_border_px, width_px, height_px),
-            "SAOL3D - Research Experiment Console - " + SAOL.GlobalInfo.version
+            "SAOL3D - Research Experiment Console - " + PCRM.appname + " " + PCRM.version
         );
 
         // FPS and Diagnostics

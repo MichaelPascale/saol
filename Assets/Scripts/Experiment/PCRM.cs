@@ -12,10 +12,14 @@ using System.IO.Compression;
 using System.Collections.Generic;
 
 using UnityEngine;
+using System.Collections;
 
 public class PCRM : SAOLExperiment
 {
+    public const string appname = "PCRM";
+    public const string version = "0.1.0";
     private OrderTable order;
+
     public EffortfulControl control;
     public const uint ARMS = 8;
     public const int PREALLOC_SIZE_TRAJ = 216000; // 60Hz for 1h.
