@@ -26,6 +26,8 @@ public class EffortfulControl : MonoBehaviour
     private CharacterController controller;
 
     const int N_RECENT = 10;
+
+    private InputAction move_action;
     private InputAction effort_action;
     private Queue<double> effort_recent_ds = new Queue<double>(N_RECENT);
     private double effort_last_t = 0;
@@ -40,7 +42,13 @@ public class EffortfulControl : MonoBehaviour
     {
         controller = GetComponent<CharacterController>();
 
-        
+        move_action = new InputAction("SAOLMove");
+        move_action.AddBinding("<Gamepad>/leftStick");
+        move_action.AddCompositeBinding("2DVector")
+            .With("Up", "<Keyboard>/w")
+            .With("Down", "<Keyboard>/s")
+            .With("Left", "<Keyboard>/a")
+            .With("Right", "<Keyboard>/d");
 
         effort_action = new InputAction("SAOLEffortRTKey");
         effort_action.AddBinding("<Keyboard>/enter");
@@ -74,20 +82,20 @@ public class EffortfulControl : MonoBehaviour
             Debug.Log($"n = {effort_recent_ds.Count}, last rt = {diff, 5:F3}, avg rate = {effort_rate, 5:F3}, scaled rate = {effort_rate / effort_rate_max}");
         };
 
+        move_action.Enable();
         effort_action.Enable();
     }
 
     void Update()
     {
         // Get movement input
-        float moveX = Input.GetAxis("Horizontal"); // Left and Right Arrow keys (A/D)
-        float moveZ = Input.GetAxis("Vertical");   // Up and Down Arrow keys (W/S)
+        Vector2 move_vec = move_action.ReadValue<Vector2>();
 
         if (isPaused)
             return;
 
         // Move the character
-        Vector3 move = transform.forward * moveZ * (float) (effort_rate/effort_rate_max) * moveSpeed;
+        Vector3 move = transform.forward * move_vec.y * (float) (effort_rate/effort_rate_max) * moveSpeed;
 
         // While the effort key has not been pressed, decay the press-rate.
         effort_rate *= Mathf.Pow(0.5f, Time.deltaTime * 4);
@@ -98,7 +106,7 @@ public class EffortfulControl : MonoBehaviour
         controller.Move(move * Time.deltaTime);
 
         // Rotate character left/right
-        float rotation = moveX * rotationSpeed * Time.deltaTime;
+        float rotation = move_vec.x * rotationSpeed * Time.deltaTime;
         transform.Rotate(0, rotation, 0);
     }
 
