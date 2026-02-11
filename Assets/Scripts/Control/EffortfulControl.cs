@@ -25,6 +25,8 @@ public class EffortfulControl : MonoBehaviour
 
     private CharacterController controller;
 
+    public SAOLConsole console;
+
     const int N_RECENT = 10;
 
     private InputAction move_action;
@@ -54,7 +56,10 @@ public class EffortfulControl : MonoBehaviour
         effort_action.AddBinding("<Keyboard>/enter");
         effort_action.AddBinding("<Gamepad>/buttonSouth");
 
-        effort_action.started += ctx => {            
+        effort_action.started += ctx => {    
+            if (isPaused || console != null ? console.visible : false)
+                return;
+
             double diff = ctx.time - effort_last_t;
             effort_last_t = ctx.time;
 
@@ -91,7 +96,7 @@ public class EffortfulControl : MonoBehaviour
         // Get movement input
         Vector2 move_vec = move_action.ReadValue<Vector2>();
 
-        if (isPaused)
+        if (isPaused || console != null ? console.visible : false)
             return;
 
         // Move the character
