@@ -50,6 +50,8 @@ public class PCRM : SAOLExperiment
 
         onstop();
         control.stop_record();
+        player.unpause();
+        control.isPaused = false;
         
         return "Stopped.";
     }
@@ -148,52 +150,73 @@ public class PCRM : SAOLExperiment
         overlay.text("This is the next floor of the museum.");
         overlay.show();
 
+        control.isPaused = true;
         player.reset();
         player.pause();
 
+        // Event durations.
+        float ts_ins1 =  2;
+        float ts_rota = 18;
+        float ts_ins2 =  2;
+
+        float ts_move = 40;
+
+        float ts_fade =  5;
+        float ts_ins3 =  2;
+        //      total = 69 (42 min for 40 trials)
+
+        // FIXME: Loading the stimuli takes time. Eliminate this delay.
+        // Here during the setup is the safest time to block.
+        place_stimuli();
         // Schedule events that occur within the trial.
         StartCoroutine(wait_then_execute(
             ()=>{
                 overlay.clear();
-                overlay.text("You may spend thirty seconds here.");
+                overlay.hide();
+                StartCoroutine(rotate_player(1)); // should take 18 seconds
             },
-            3
+            ts_ins1
+        ));
+
+        StartCoroutine(wait_then_execute(
+            ()=>{
+                overlay.clear();
+                overlay.text("You may spend forty seconds here.");
+                overlay.show();
+            },
+            ts_ins1 + ts_rota
         ));
 
         StartCoroutine(wait_then_execute(
             ()=>{
                 overlay.clear();
                 overlay.hide();
-                place_stimuli();
-                StartCoroutine(rotate_player(1));
+                player.unpause(); // unpause the player
+                control.isPaused = false;
             },
-            6
+            ts_ins1 + ts_rota + ts_ins2
+        ));
+
+        // Allow the player to move freely for ts_move seconds; then...
+        StartCoroutine(wait_then_execute(
+            ()=>{
+                overlay.fadein(ts_fade);
+            },
+            ts_ins1 + ts_rota + ts_ins2 + ts_move
         ));
 
         StartCoroutine(wait_then_execute(
             ()=>{
-                player.pause(); // unpause the player
-            },
-            18 + 6
-        ));
-
-        StartCoroutine(wait_then_execute(
-            ()=>{
-                overlay.fadein(5);
-            },
-            25 + 18 + 6
-        ));
-
-        StartCoroutine(wait_then_execute(
-            ()=>{
+                control.isPaused = true;
+                player.pause();
                 overlay.text("Time is up.");
             },
-            30 + 18 + 6
+            ts_ins1 + ts_rota + ts_ins2 + ts_move + ts_fade
         ));
 
         StartCoroutine(wait_then_execute(
             next_trial,
-            32 + 18 + 6
+            ts_ins1 + ts_rota + ts_ins2 + ts_move + ts_fade + ts_ins3
         ));
     }
 
@@ -223,6 +246,7 @@ public class PCRM : SAOLExperiment
         float counter = -1 + 2 * (trial % 2);
 
         for (int i = 0; i <= ARMS; i++) {
+            // FIXME: Empirically there is a mean error of +60ms per turn, accumulating to nearly a second.
             yield return new WaitForSecondsRealtime(time_s_each);
 
             float elapsed = 0;
