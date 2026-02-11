@@ -1,4 +1,10 @@
-*
-!*.cs
+# *
+# !Assets/**/
+# !*.cs
+# !Assets/Textures/SVLO/*.png
+/*
+*.meta
+!Assets/
+!Analysis/
 !README
 !LICENSE
