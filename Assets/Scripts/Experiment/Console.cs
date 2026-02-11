@@ -15,6 +15,8 @@ public class SAOLConsole : MonoBehaviour
     public bool visible = false;
     public bool appeared = false;
 
+    public GUISkin skin;
+
     // Command History
     private List<string> _history = new List<string>();
     private List<string> _results = new List<string>();
@@ -46,6 +48,8 @@ public class SAOLConsole : MonoBehaviour
     {   
         if (!visible)
             return;
+
+        GUI.skin = skin;
 
         float line_px = GUI.skin.label.lineHeight; // Properties can only be accessed within OnGUI
 
