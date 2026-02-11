@@ -147,6 +147,7 @@ public class PCRM : SAOLExperiment
 
     protected override void setup_trial()
     {
+        Debug.Log("Beginning trial " + trial + " at " + Time.realtimeSinceStartup);
         overlay.text("This is the next floor of the museum.");
         overlay.show();
 
@@ -167,7 +168,11 @@ public class PCRM : SAOLExperiment
 
         // FIXME: Loading the stimuli takes time. Eliminate this delay.
         // Here during the setup is the safest time to block.
+        float dbt = Time.realtimeSinceStartup;
         place_stimuli();
+        Debug.Log("Loaded stimuli in " + (Time.realtimeSinceStartup - dbt) + " seconds.");
+         
+        dbt = Time.realtimeSinceStartup;
         // Schedule events that occur within the trial.
         StartCoroutine(wait_then_execute(
             ()=>{
@@ -218,11 +223,14 @@ public class PCRM : SAOLExperiment
             next_trial,
             ts_ins1 + ts_rota + ts_ins2 + ts_move + ts_fade + ts_ins3
         ));
+
+        Debug.Log("Scheduled trial events in " + (Time.realtimeSinceStartup - dbt) + " seconds.");
     }
 
     protected override void end_trial()
     {
         clear_stimuli();
+        Debug.Log("Trial " + trial + " completed in " + elapsed_trial_s + " seconds.");
     }
 
     protected override void end_session()
@@ -249,6 +257,7 @@ public class PCRM : SAOLExperiment
             // FIXME: Empirically there is a mean error of +60ms per turn, accumulating to nearly a second.
             yield return new WaitForSecondsRealtime(time_s_each);
 
+            float dbt = Time.realtimeSinceStartup;
             float elapsed = 0;
 
             while (elapsed < time_s_each) // NOTE: The rotation and look duration are the same.
@@ -258,6 +267,8 @@ public class PCRM : SAOLExperiment
                 player.look(new Vector3(0, y_rot, 0));
                 yield return null;
             }
+
+            Debug.Log("Rotation " + i + " completed in " + (Time.realtimeSinceStartup - dbt) + " seconds.");
 
             player.look(new Vector3(0, (i+1)*counter*40, 0));            
         }
