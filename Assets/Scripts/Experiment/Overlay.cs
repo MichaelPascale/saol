@@ -13,6 +13,8 @@ using UnityEngine.UI;
 public class SAOLOverlay : MonoBehaviour
 {
     public Camera cam;
+
+    public Font font;
     protected Canvas canvas;
     protected Image bg;
     protected List<GameObject> fg_elements = new List<GameObject>();
@@ -58,13 +60,13 @@ public class SAOLOverlay : MonoBehaviour
         Text text = obj.AddComponent<Text>();
         text.text = message;
         text.color = color;
-        text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        text.font = font;
         text.alignment = TextAnchor.MiddleCenter;
         text.fontSize = 32;
 
         RectTransform rect = obj.GetComponent<RectTransform>();
-        rect.anchorMin = new Vector2(0.25f, 0.25f);
-        rect.anchorMax = new Vector2(0.75f, 0.75f);
+        rect.anchorMin = new Vector2(0.2f, 0.2f);
+        rect.anchorMax = new Vector2(0.8f, 0.8f);
         rect.offsetMin = Vector2.zero;
         rect.offsetMax = Vector2.zero;
 
