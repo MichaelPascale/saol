@@ -24,29 +24,37 @@ public class SAOLPlayer : MonoBehaviour
 
     public void teleport(Vector3 position)
     {
+        bool contrl_state = controller.enabled;
         controller.enabled = false;
         transform.position = position;
-        controller.enabled = true;
+        controller.enabled = contrl_state;
     }
 
     public void look(Vector3 direction)
-    {        
+    {
+        bool contrl_state = controller.enabled;
         controller.enabled = false;
         transform.eulerAngles = direction;
-        controller.enabled = true;
+        controller.enabled = contrl_state;
     }
 
     public void reset()
     {
+        bool contrl_state = controller.enabled;
         controller.enabled = false;
         transform.position = new Vector3(0, 1, 0);
         transform.eulerAngles = Vector3.zero;
-        controller.enabled = true;
+        controller.enabled = contrl_state;
     }
 
     public void pause()
     {
-        controller.enabled = !controller.enabled;
+        controller.enabled = false;
+    }
+
+    public void unpause()
+    {
+        controller.enabled = true;
     }
 
     public Vector3 get_position()
