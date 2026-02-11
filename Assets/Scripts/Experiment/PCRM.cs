@@ -37,9 +37,6 @@ public class PCRM : SAOLExperiment
         if (order.uniqueID is null)
             return "A trial order file has not been loaded.";
 
-        if (mode == Mode.Uninitialized)
-            return "An experiment has not been initialized";
-        
         onstart();
 
         return "Began at " + t_init + ".";
@@ -53,6 +50,7 @@ public class PCRM : SAOLExperiment
 
         onstop();
         control.stop_record();
+        
         return "Stopped.";
     }
 
@@ -106,6 +104,8 @@ public class PCRM : SAOLExperiment
         order.n_arms   = order.arm[n-1];
 
         n_trials = (uint) order.n_trials;
+
+        mode = Mode.Ready;
         
         return "Loaded order file.";
     }
@@ -248,7 +248,7 @@ public class PCRM : SAOLExperiment
             stimuli_outer[i] = new PCRMStimOuter(i+1, get_image_path(trial, i+1, true));
         }
     }
-    
+
     private void clear_stimuli()
     {
         for (uint i = 0; i < ARMS; i++){

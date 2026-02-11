@@ -17,7 +17,7 @@ public abstract class SAOLExperiment : MonoBehaviour
     public SAOLConsole console;
     public SAOLOverlay overlay;
 
-    public enum Mode { Uninitialized, Stopped, Running }
+    public enum Mode { Uninitialized, Ready, Running, Stopped }
     protected Mode mode;
     protected uint trial;
     protected uint n_trials;
@@ -42,6 +42,9 @@ public abstract class SAOLExperiment : MonoBehaviour
 
     protected void onstart()
     {
+        if (mode != Mode.Ready)
+            throw new InvalidOperationException("The experiment is not in a ready state.");
+        
         trial = 0;
         mode = Mode.Running;
         t_init = DateTime.Now;
