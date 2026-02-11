@@ -89,12 +89,12 @@ public abstract class SAOLExperiment : MonoBehaviour
         action();
     }
 
-    protected IEnumerator wait_for_space(Action action, string message = "Press space to begin.")
+    protected IEnumerator wait_for_space(Action action, string message = "Press start to begin.")
     {
         overlay.clear();
         overlay.text(message);
         overlay.show();
-        yield return new WaitUntil(() => Keyboard.current.spaceKey.wasPressedThisFrame);
+        yield return new WaitUntil(() => Keyboard.current.spaceKey.wasPressedThisFrame || Gamepad.current.startButton.wasPressedThisFrame);
 
         overlay.clear();
         action();

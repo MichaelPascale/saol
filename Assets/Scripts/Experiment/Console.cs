@@ -39,7 +39,7 @@ public class SAOLConsole : MonoBehaviour
     {
         toggleAction = new InputAction("SAOL Open Console");
         toggleAction.AddBinding("<Keyboard>/escape");
-        toggleAction.AddBinding("<Gamepad>/start");
+        toggleAction.AddBinding("<Gamepad>/select");
         toggleAction.started += ctx => toggle_visibility();
         toggleAction.Enable();
     }
