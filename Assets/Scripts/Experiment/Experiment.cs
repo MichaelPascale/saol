@@ -94,7 +94,7 @@ public abstract class SAOLExperiment : MonoBehaviour
         overlay.clear();
         overlay.text(message);
         overlay.show();
-        yield return new WaitUntil(() => Keyboard.current.spaceKey.wasPressedThisFrame || Gamepad.current.startButton.wasPressedThisFrame);
+        yield return new WaitUntil(() => Keyboard.current.spaceKey.wasPressedThisFrame || (Gamepad.current != null ? Gamepad.current.startButton.wasPressedThisFrame : false));
 
         overlay.clear();
         action();
