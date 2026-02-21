@@ -279,8 +279,10 @@ public class PCRM : SAOLExperiment
         clear_stimuli();
         for (uint i = 0; i < ARMS; i++)
         {
-            stimuli_inner[i] = new PCRMStim(i+1, get_image_path(trial, i+1));
-            stimuli_outer[i] = new PCRMStimOuter(i+1, get_image_path(trial, i+1, true));
+            uint j = get_stim_index(trial, i+1);
+            string path = Path.Join(stimuli_path, $"{order.uniqueID[j]}.jpg");
+            stimuli_inner[i] = new PCRMStim(i+1, path, blur: order.sigma[j]);
+            stimuli_outer[i] = new PCRMStimOuter(i+1, path);
         }
     }
 
@@ -350,6 +352,25 @@ public class PCRM : SAOLExperiment
         return;
     }
 
+    private uint get_stim_index(uint trial, uint arm)
+    {
+        if (order.uniqueID is null)
+            throw new InvalidOperationException("A trial order file has not been loaded.");
+
+        if (trial > order.n_trials || trial == 0)
+            throw new  ArgumentOutOfRangeException("trial");
+
+        if (arm > order.n_arms || arm == 0)
+            throw new  ArgumentOutOfRangeException("arm");
+
+        uint i = (trial - 1) * ARMS + (arm - 1);
+        if (order.trial[i] != trial || order.arm[i] != arm)
+            throw new InvalidDataException("The order file does not contain the expected entries.");
+
+        return i;
+    }
+
+    // NOTE: This is deprecated in favor of direct table lookup with the above get_stim_index().
     private string get_image_path(uint trial, uint arm, bool clear = false)
     {
         if (order.uniqueID is null)
