@@ -17,7 +17,7 @@ using System.Collections;
 public class PCRM : SAOLExperiment
 {
     public const string appname = "PCRM";
-    public const string version = "0.1.0";
+    public const string version = "0.1.1";
     private OrderTable order;
 
     public EffortfulControl control;
