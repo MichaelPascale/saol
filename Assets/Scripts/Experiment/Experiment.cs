@@ -26,9 +26,11 @@ public abstract class SAOLExperiment : MonoBehaviour
     protected double elapsed_s;
     protected double elapsed_trial_s;
 
+    protected string session_data_dir;
+
     public void Start()
     {
-        
+        session_data_dir = Application.persistentDataPath;
     }
     public void Update()
     {

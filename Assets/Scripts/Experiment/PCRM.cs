@@ -63,7 +63,7 @@ public class PCRM : SAOLExperiment
             return "No data to save.";
 
         write_data(path);
-        control.save("effort" + DateTime.UtcNow.ToString("yyyyMMdd'T'HHmmss'Z'") + ".tsv.gz");
+        control.save(Path.Combine(session_data_dir, "effort" + DateTime.UtcNow.ToString("yyyyMMdd'T'HHmmss'Z'") + ".tsv.gz"));
 
         return $"Saved to '{path}'";
     }
@@ -73,7 +73,8 @@ public class PCRM : SAOLExperiment
     // NOTE: This assumes that the rows are sorted by trial and arm. It performs no checks.
     public string cmd_load_order(string file)
     {
-        string[] lines = File.ReadAllLines(Path.Join(stimuli_path, "Parameters", file));
+        string path = Path.Join(stimuli_path, "Parameters", file);
+        string[] lines = File.ReadAllLines(path);
         
         string[] names = lines[0].Split('\t');
         Debug.Log("loaded file with headers: " + string.Join(' ', names));
@@ -106,6 +107,7 @@ public class PCRM : SAOLExperiment
         order.n_arms   = order.arm[n-1];
 
         n_trials = (uint) order.n_trials;
+        order.path = path;
 
         mode = Mode.Ready;
         
@@ -139,9 +141,19 @@ public class PCRM : SAOLExperiment
     // base class methods.
     protected override void setup_session()
     {
+        control.isPaused = true;
+        player.reset();
+        player.pause();
+        
         trajectory_data.Clear();
         control.record();
         clear_stimuli();
+
+        session_data_dir = Path.Combine(Application.persistentDataPath, DateTime.UtcNow.ToString("yyyyMMdd'T'HHmmss'Z'"));
+        Directory.CreateDirectory(session_data_dir);
+
+        File.Copy(order.path, Path.Combine(session_data_dir, Path.GetFileName(order.path)));
+
         StartCoroutine(wait_for_space(next_trial));
     }
 
@@ -340,7 +352,7 @@ public class PCRM : SAOLExperiment
         if (!path.EndsWith(".tsv.gz"))
             throw new ArgumentOutOfRangeException("Provided filename must have extension 'tsv.gz'.");
 
-        using (FileStream stream = File.Create(Path.Combine(Application.persistentDataPath, path)))
+        using (FileStream stream = File.Create(Path.Combine(session_data_dir, path)))
         using (GZipStream compressor = new GZipStream(stream, System.IO.Compression.CompressionLevel.Optimal))
         using (StreamWriter writer = new StreamWriter(compressor, Encoding.UTF8))
         {
@@ -402,6 +414,7 @@ public class PCRM : SAOLExperiment
 
     public struct OrderTable
     {
+        public string path;
         public int n_trials;
         public int n_arms;
         public int[] trial;

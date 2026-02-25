@@ -120,7 +120,7 @@ public class EffortfulControl : MonoBehaviour
         if (!path.EndsWith(".tsv.gz"))
             throw new ArgumentOutOfRangeException("Provided filename must have extension 'tsv.gz'.");
 
-        using (FileStream stream = File.Create(Path.Combine(Application.persistentDataPath, path)))
+        using (FileStream stream = File.Create(path))
         using (GZipStream compressor = new GZipStream(stream, System.IO.Compression.CompressionLevel.Optimal))
         using (StreamWriter writer = new StreamWriter(compressor, Encoding.UTF8))
         {
