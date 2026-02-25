@@ -282,7 +282,8 @@ public class PCRM : SAOLExperiment
 
             Debug.Log("Rotation " + i + " completed in " + (Time.realtimeSinceStartup - dbt) + " seconds.");
 
-            player.look(new Vector3(0, (i+1)*counter*40, 0));            
+            player.look(new Vector3(0, (i+1)*counter*40, 0));        
+            ScreenCapture.CaptureScreenshot(Path.Combine(session_data_dir, "trial" +trial +"arm"+(i+1)+ ".png"));    
         }
     }
 
