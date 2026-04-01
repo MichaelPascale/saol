@@ -1,13 +1,18 @@
-![https://static.psyc.dev/assets/github/saol-optim.svg](https://static.psyc.dev/assets/github/saol-optim.png)  
-Saol. Copyright &copy; 2025, Michael Pascale. All rights reserved.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://static.psyc.dev/assets/github/saol-optim-dark.png">
+  <source media="(prefers-color-scheme: light)" srcset="https://static.psyc.dev/assets/github/saol-optim.png">
+  <img alt="" src="https://static.psyc.dev/assets/github/saol-optim.png">
+</picture>
+
+Saol. Copyright &copy; 2025-2026, Michael Pascale. All rights reserved.
 
 A virtual environment in which to study spatial nagivation, attention, orientation, and learning. From an Irish Gaelic word for _life_, including the encompassing conditional aspects of the world (environmental context). Implemented in C# for the Unity Engine.
 
 Build Requirements:
 - [Unity](https://unity.com/releases/editor/archive) 6 LTS (6000.0.40f1, Unity Technologies)
   Mono Runtime with [.NET Standard 2.1](https://learn.microsoft.com/en-us/dotnet/standard/net-standard?tabs=net-standard-2-1).
-- [Parquet.NET](https://github.com/aloneguid/parquet-dotnet) (5.1.1, Ivan Gavryliuk)
-  Used for efficient storage of behavioral data ([docs](https://aloneguid.github.io/parquet-dotnet/serialisation.html)).
+- ~[Parquet.NET](https://github.com/aloneguid/parquet-dotnet) (5.1.1, Ivan Gavryliuk)
+  Used for efficient storage of behavioral data ([docs](https://aloneguid.github.io/parquet-dotnet/serialisation.html)).~
 - [ImageSharp](https://github.com/SixLabors/ImageSharp) (2.1.10, SixLabors)
   Used for processing of image stimuli ([docs](https://docs-v2.sixlabors.com/articles/imagesharp/index.html)).
 
@@ -26,3 +31,15 @@ At time of writing, development was conduted under [Fedora 41 Workstation](https
   <br>
   <em>An enclosed space, generated from hexagonal tiles. Arbitrary stimuli appear on the walls, emulating an art gallery.</em>
 </p>
+
+
+## Tasks Implemented in SAOL
+
+The following tasks make use of the Saol navigation experiment engine.
+
+### Perceptual Curiosity in the Radial Maze (PCRM)
+
+
+Additional Requirements:
+
+- [3DModels/maze/RadialMaze8Arm_v1.obj](https://github.com/MichaelPascale/3DModels)
