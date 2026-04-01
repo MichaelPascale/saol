@@ -16,6 +16,8 @@ library(purrr)
 library(ggforce) # for geom_circles
 library(patchwork)
 
+theme_set(theme_classic() + theme(text=element_text(size=9,  family="Ysabeau Office")))
+
 source("layouts.r")
 source("plot_subject.r")
 
