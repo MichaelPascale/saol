@@ -7,12 +7,13 @@
 
 plot_subject <- function (ptpt, position, effort, stimtab, envir_layout) {
 
+  # FIXME: The ggplot theme does not get set when running in parallel targets subprocesses.
+  theme_set(theme_classic() + theme(text=element_text(size=9,  family="Ysabeau Office")))
+
+
   # Define the radius of the circle around each arm end that determines whether
   # or not the participant was counted as present in the arm end.
   radius_to_detect = 22
-
-  # For each trial, reset time such that 0 is at 22s, the point from which behavior is free.
-  position <- position |> filter(trial > 0) |> mutate(.by=trial, realtime=time, time = time - time[1] - 22)
 
   # Add to the order table the positions of the stimuli for plotting.
   stimtab <-
@@ -60,26 +61,17 @@ plot_subject <- function (ptpt, position, effort, stimtab, envir_layout) {
       panel.border = element_blank()
     )
 
-  brks <- position |> filter(between(time, 0, 45)) |> reframe(.by=trial, start=min(realtime), end=max(realtime))
-
-  efftrial <-
-    inner_join(
-      effort, brks, join_by(time >=start, time <= end)
-    ) |>
-    select(trial, time) |>
-    mutate(.by=trial, time=time - time[1], diff=c(NA, diff(time))) |>
-    filter(diff < 1)
-
   p2 <-
-    efftrial |>
-    ggplot() + stat_summary(aes(x=factor(trial), y=diff*1000)) +
+    effort |>
+    ggplot() + stat_summary(aes(x=factor(trial), y=iki*1000)) +
     labs(
       title="Inter-Key-Intervals During Effortful Movement by Trial",
       x="Trial",
       y="RT (ms)"
     )
 
-  p3 <- stimtab |> left_join(position, by='trial') |> mutate(dist=sqrt((x.x - x.y)^2 + (z.x - z.y)^2)) |>
+  browser()
+  p3 <- stimtab |> left_join(select(position, -arm), by='trial') |> mutate(dist=sqrt((x.x - x.y)^2 + (z.x - z.y)^2)) |>
     filter(dist < radius_to_detect) |>
     distinct(trial, arm) |>
     left_join(stimtab) |>
@@ -92,7 +84,8 @@ plot_subject <- function (ptpt, position, effort, stimtab, envir_layout) {
       y="Frequency"
     )
 
-  p4 <- stimtab |> left_join(position, by='trial') |> mutate(dist=sqrt((x.x - x.y)^2 + (z.x - z.y)^2)) |>
+
+  p4 <- stimtab |> left_join(select(position, -arm), by='trial') |> mutate(dist=sqrt((x.x - x.y)^2 + (z.x - z.y)^2)) |>
     filter(dist < radius_to_detect) |>
     distinct(trial, arm) |>
     left_join(stimtab) |>
@@ -105,37 +98,8 @@ plot_subject <- function (ptpt, position, effort, stimtab, envir_layout) {
       y="Frequency"
     )
 
-  calc_arm <- function (x, y, narms=9, distance=7.5, extent=45, width=4, full.table=F) {
-    stopifnot(length(x) == 1, length(y) == 1)
-
-    # Just half a circle because each arm is separated by a wall.
-    # Then, times two to get the angle between every other wall.
-    th <- 2*(pi / narms) * seq(0,narms-1)
-
-    # Calculate the point rotated counterclockwise to each arm position.
-    xs = x*cos(th) - y*sin(th)
-    ys = x*sin(th) + y*cos(th)
-    res = (abs(xs) <= width) & ys <= extent & ys >= distance
-
-    # Return the index of the arm meeting the criteria.
-    if(!full.table)
-      return(if(any(res)) which(res) else NA_integer_)
-
-    data.frame(xs,ys,theta=th, result=res)
-  }
-
-  pathArmLabels <-
-    rowwise(position) |>
-    mutate(arm=calc_arm(x,z)) |>
-    ungroup() |>
-    mutate(
-      arm = arm-1,
-      distance=sqrt((0 - x)^2 + (0 - z)^2),
-      approach = between(distance, 7.5, 7.5*5)
-    )
-
   # Only the first entry per trial...
-  p5 <- pathArmLabels |>
+  p5 <- position |>
     drop_na(arm) |>
     left_join(select(stimtab, -c(x,z))) |>
     filter(.by=trial, arm == unique(arm)[1]) |>
@@ -148,7 +112,7 @@ plot_subject <- function (ptpt, position, effort, stimtab, envir_layout) {
       y="Frequency"
     )
 
-  p6 <- pathArmLabels |>
+  p6 <- position |>
     drop_na(arm) |>
     left_join(select(stimtab, -c(x,z))) |>
     filter(.by=trial, arm == unique(arm)[1]) |>
@@ -162,7 +126,7 @@ plot_subject <- function (ptpt, position, effort, stimtab, envir_layout) {
     )
 
   # Look at second entries relative to first
-  p7 <- pathArmLabels |>
+  p7 <- position |>
     drop_na(arm) |>
     left_join(select(stimtab, -c(x,z))) |>
     mutate(.by=trial, first = unique(arm)[1]) |>
@@ -178,10 +142,9 @@ plot_subject <- function (ptpt, position, effort, stimtab, envir_layout) {
       y="Frequency"
     )
 
-  p8 <-
-    pathArmLabels |>
+  p8 <- position |>
     drop_na(arm) |>
-    filter(approach) |>
+    filter(between(distance, 7.5, 7.5*5)) |>
     filter(.by=trial, arm == unique(arm)[1]) |>
     mutate(.by=trial, timeInTrial=time-time[1]) |>
     ggplot(aes(timeInTrial,distance, group=trial)) +

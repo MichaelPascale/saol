@@ -50,3 +50,33 @@ geom_layout_maze <- function (envir_layout, fill="gray80", color="gray40", linew
     fill = fill, color = color, linewidth = linewidth
   )
 }
+
+# Given an arbitrary position, determine what arm of the maze it's in.
+calc_maze_arm <- function (x, y, narms=9, distance=7.5, extent=45, width=4, full.table=F) {
+  stopifnot(length(x) == 1, length(y) == 1)
+
+  # To determine whether or not a point is in a polygon is, apparently, difficult.
+  #  https://en.wikipedia.org/wiki/Point_in_polygon
+  #
+  # Considering that the arms are rectangular, it's much easier to rotate the
+  # query point to the vertical and then ask whether it's inside a bounding
+  # rectangle.
+  #
+  # Alas, I cannot think of a better algorithm. This shouldn't be too bad if
+  # vectorized O(n).
+
+  # Just half a circle because each arm is separated by a wall.
+  # Then, times two to get the angle between every other wall.
+  th <- 2*(pi / narms) * seq(0,narms-1)
+
+  # Calculate the point rotated counterclockwise to each arm position.
+  xs = x*cos(th) - y*sin(th)
+  ys = x*sin(th) + y*cos(th)
+  res = (abs(xs) <= width) & ys <= extent & ys >= distance
+
+  # Return the index of the arm meeting the criteria.
+  if(!full.table)
+    return(if(any(res)) which(res) else NA_integer_)
+
+  data.frame(xs,ys,theta=th, result=res)
+}
