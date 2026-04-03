@@ -17,7 +17,8 @@ tar_option_set(
     "readr",
     "stringr",
     "purrr",
-    "ggforce",
+    "ggforce",    # for plotting circles
+    "ggpattern",  # for plotting images
     "patchwork"
   )
 )
