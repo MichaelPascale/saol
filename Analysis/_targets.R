@@ -27,6 +27,7 @@ tar_option_set(
 source("layouts.r")
 source("behavioral.r")
 source("plot_subject.r")
+source("plot_stimulus.r")
 
 load_tsv <- \(file) extract(read_tsv(file, id="file"), file, "subject", "/(PCRM\\d+)/")
 
@@ -56,9 +57,27 @@ list(
   tar_file(envir_model_file, "models/maze/RadialMaze8Arm_v1.obj"),
   tar_target(envir_layout, load_layout_maze(envir_model_file)),
 
+  #
+  tar_file(blurlevels_file, "stimuli/imaglevels320.rds"),
+  tar_target(blurlevels, readRDS(blurlevels_file)),
+
+  # Survey data from Qualtrics export.
+  tar_file(survey_file, "data/v0.1/survey/PCRMSP26+Pilot_April+1,+2026_17.31.csv"),
+  tar_target(survey, {
+    # NOTE: Qualtrics insists on several rows of header information.
+    # Export as values in CSV format with default options.
+    col_names <- names(read_csv(survey_file, n_max=0))
+    read_csv(survey_file, skip=3, col_names=col_names)
+  }),
+
   # Subject-level targets.
   sbj_targets,
 
   # Aggregated targets.
-  tar_combine(all_data, sbj_targets[["position"]])
+  tar_combine(all_data, sbj_targets[["position"]]),
+
+  tar_target(plots_stim, plot_stimulus(all_data, blurlevels, envir_layout)),
+  tar_target(plots_stim_pdf,
+             ggsave(file.path("output", "stimlevel.pdf"), plots_stim, cairo_pdf, width=11, height=8.5),
+             format = "file")
 )
