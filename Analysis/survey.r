@@ -1,5 +1,5 @@
 # survey.r
-# Process and summarize surveys 
+# Process and summarize surveys
 #
 # Copyright (c) 2026, Michael P. Pascale <mpascale@bu.edu>.
 # Copyright (c) 2026, Alev Egilmez <caglalev@bu.edu>.
@@ -85,3 +85,14 @@ survey |>
     iae = rowMeans(across(c(AReA_8, AReA_11,AReA_12, AReA_13))),
     cb  = rowMeans(across(c(AReA_5, AReA_7, AReA_10)))
   )
+pivot_longer(dcr_scale, c("joy","ds","ts","st","osc","csc")) |>
+  select(-c("5DCR_1":"5DCR_24")) |>
+
+  ggplot() +
+  stat_summary(aes(x = name, y = value))
+
+pivot_longer(AReA_scale, c("aa","iae","cb")) |>
+  select(-c("AReA_1":"AReA_14")) |>
+
+  ggplot() +
+  stat_summary(aes(x = name, y = value))
