@@ -4,7 +4,7 @@
 # Copyright (c) 2026, Michael P. Pascale <mpascale@bu.edu>.
 # SPDX-License-Identifier: MIT
 
-plot_stimulus <- function (all_data, blurlevels, envir_layout) {
+plot_stimulus <- function (all_data, all_entries, blurlevels, envir_layout) {
 
   theme_set(theme_classic() + theme(text=element_text(size=9,  family="Ysabeau Office")))
 
@@ -21,13 +21,7 @@ plot_stimulus <- function (all_data, blurlevels, envir_layout) {
       y="Z-Position"
     )
 
-  # Just those rows where the arm changes. Time reflects arm entry time.
-  armchange <-
-    filter(drop_na(all_data, arm), .by=c(subject, trial), row_number() == 1 | arm != lag(arm)) |>
-    mutate(.by=c(subject,trial), entry=row_number(), .before=time)
-
-
-  p2 <- ggplot(armchange, aes(y=entry, x=time)) +
+  p2 <- ggplot(all_entries, aes(y=entry, x=time)) +
     geom_point(
       position=position_jitterdodge(jitter.height = .4, jitter.width = 0, dodge.width = 0),
       alpha=0.5
@@ -47,17 +41,17 @@ plot_stimulus <- function (all_data, blurlevels, envir_layout) {
   #         panel.spacing = unit(0.1, "lines")
   #   )
 
-  p3 <- ggplot(filter(armchange, entry==1)) +
+  p3 <- ggplot(filter(all_entries, entry==1)) +
     geom_bar(aes(x=blur)) +
     facet_wrap(vars(subject)) +
     labs(title="Per-Subject First Arm Entry by Blur Assignment")
 
-  p4 <- ggplot(filter(armchange, entry==1)) +
+  p4 <- ggplot(filter(all_entries, entry==1)) +
     geom_bar(aes(x=blur)) +
     labs(title="Overall First Arm Entry by Blur Assignment")
 
   # Find the stimuli which had the most first-entries.
-  stimfe <- armchange |> filter(entry == 1) |> filter(.by=uniqueID, n() > 4)
+  stimfe <- all_entries |> filter(entry == 1) |> filter(.by=uniqueID, n() > 4)
 
   stimfe_imageset <- left_join(distinct(stimfe, uniqueID), blurlevels) |>
     mutate(img = str_glue("{uniqueID}_{blur}.jpg"))

@@ -76,7 +76,15 @@ list(
   # Aggregated targets.
   tar_combine(all_data, sbj_targets[["position"]]),
 
-  tar_target(plots_stim, plot_stimulus(all_data, blurlevels, envir_layout)),
+  # Arm entry timepoints.
+  tar_target(all_entries, {
+    drop_na(all_data, arm) |>
+      # Keep the first entry and subsequent changes.
+      filter(.by=c(subject, trial), row_number() == 1 | arm != lag(arm)) |>
+      mutate(.by=c(subject, trial), entry=row_number(), .before=time)
+  }),
+
+  tar_target(plots_stim, plot_stimulus(all_data, all_entries, blurlevels, envir_layout)),
   tar_target(plots_stim_pdf,
              ggsave(file.path("output", "stimlevel.pdf"), plots_stim, cairo_pdf, width=11, height=8.5),
              format = "file")
