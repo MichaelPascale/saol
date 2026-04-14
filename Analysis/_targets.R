@@ -75,6 +75,7 @@ list(
 
   # Aggregated targets.
   tar_combine(all_data, sbj_targets[["position"]]),
+  tar_combine(all_stimtab, sbj_targets[["stimtab"]]),
 
   # Arm entry timepoints.
   tar_target(all_entries, {
