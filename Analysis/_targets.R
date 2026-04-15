@@ -34,7 +34,7 @@ load_tsv <- \(file) extract(read_tsv(file, id="file"), file, "subject", "/(PCRM\
 # Files to load per-participant.
 sbj_targets <-
   tar_map(
-    values=list(ptpt=sprintf("PCRM%03d", c(1:2, 4:14))),
+    values=list(ptpt=sprintf("PCRM%03d", c(1:2, 4:16, 18))),
 
     # Trajectory and effort data files. Stimulus presentation order table.
     tar_file(position_file, dir(file.path("data", "v0.1", ptpt), "^PoseData.*\\.tsv", full.names = T)),
