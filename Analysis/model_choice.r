@@ -8,40 +8,114 @@ library(brglm2)
 library(lme4)
 
 tar_load(all_entries)
-tar_load(stimtab_PCRM014)
 
-# entries_PCRM001 <-
 dat <- all_entries |>
   filter(entry == 1) |>
-  filter(trial > 4) |>
-  # filter(subject=="PCRM013") |>
   select(subject, trial, chose_arm=arm, chose_blur=blur) |>
   left_join(all_stimtab, relationship = "one-to-many") |>
   mutate(
     # The viewing order (left/right scan of options) alternates each trial.
     # The sequence is the same for all subjects: R, L, R, L, ...
     direction = (trial+1) %% 2, #0,1,0
-    # The model will
+    # Model a binary outcome for each alternative.
     outcome = as.numeric(chose_arm == arm),
     # Mean center the blur assignments.
     blur=blur-mean(blur),
-
-    # saw = factor(if_else(direction == 0, arm, 9-arm)),
-    # arm = factor(arm)
-
-    # separate coding
-    # fwd = factor(if_else(direction == 0, arm, NA)),
-    # rev = factor(if_else(direction == 1, arm, NA)),
-    dir = factor(if_else(direction == 0, arm, arm+8))
+    # A combined factor accounts for physical position and serial order of arms.
+    position = factor(if_else(direction == 0, arm, arm+8))
   )
 
 
-# Single Subject
-mdl <- glm(outcome ~  blur+dir, "binomial", dat, method="brglm_fit")
-summary(mdl)
+run_model_subject <- function (model, data) {
+  group_by(data,subject) |>
+  nest() |>
+  mutate(
+    model = map(data, model),
+    results = map(.data$model, tidy),
+    map_dfr(.data$model, glance)
+  )
+}
 
-mdl <- glm(outcome ~  blur+arm + saw, "binomial", dat, method="brglm_fit")
+fits <- list(
+  "linear"       = partial(glm, outcome ~ -1 + blur + position, "binomial", method="brglm_fit"),
+  "quadratic"    = partial(glm, outcome ~ -1 + blur * I(blur^2) + position, "binomial", method="brglm_fit"),
+  "linear_sigma" = partial(glm, outcome ~ -1 + sigma + position, "binomial", method="brglm_fit")
 
+
+models <- map(fits, run_model_subject, dat)
+
+models$linear |>
+  unnest(results) |>
+  mutate(
+    facet=case_when(
+        str_detect(term, "blur|sigma") ~ 1,
+        str_detect(term, "n[1-8]$") ~ 2,
+        str_detect(term, "n(9|1\\d)$") ~ 3
+      ) |>
+      factor(1:3, c(
+        "Effect of Blur",
+        "Mean Offsets - Arm Position (CW)",
+        "Mean Offsets - Arm Position (CCW)"
+      )
+    ),
+    term = factor(
+      term,
+      c("blur",
+        "I(blur^2)",
+        "blur:I(blur^2)",
+        "sigma",
+        paste0("position", 1:16)
+      ),
+      c("L", "Q", "LxQ", "Abs. Sigma (px)", paste0("P",1:16))
+    )
+  ) |>
+  ggplot(aes(term, estimate, color=subject)) +
+  geom_line(aes(group=subject),  linewidth=0.33, alpha=0.15) +
+  stat_summary(geom="pointrange", color="darkred", position=position_nudge(x=.2), size=.3) +
+  geom_point() +
+  scale_color_viridis_d(option="cividis", guide="none") +
+  facet_wrap(~facet, scales="free", space="free_x") +
+  theme_classic() +
+  labs(
+    y="Estimate",
+    x="Model Term"
+  )
+
+
+
+# Subject as a fixed effect?
+# mdl <- glm(outcome ~  -1+(blur+position):subject, "binomial", mutate(dat, subject=factor(subject)), method="brglm_fit")
+# summary(mdl)
+#
+# massive <- tidy(mdl) |>
+#   extract(term, c("term", "subject"), "(\\w+):subject(\\w+)") |>
+#   arrange(subject)
+#
+# massive
+#
+# left_join(models, massive, by=c("subject","term")) |> select(subject, term, estimate.x, estimate.y, std.error.x, std.error.y)
+#
+#
+
+#
+# tidy(mdl) |>
+#   extract(term, c("covariate", "subject"), "(\\w+):subject(\\w+)") |>
+#   arrange(subject) |>
+#   mutate(
+#     facet=case_when(
+#       covariate == "blur" ~ "Effect of Blur",
+#       str_detect(covariate, "r[1-8]$") ~ "Mean Offsets - Arm Position (CW)",
+#       str_detect(covariate, "r(9|1\\d)$") ~ "Mean Offsets - Arm Position (CCW)"
+#     ),
+#     covariate = factor(covariate, c("blur", paste0("dir", 2:16)))
+#   ) |>
+#   ggplot(aes(covariate, estimate, color=subject)) +
+#   geom_point() +
+#   geom_line(aes(group=subject), linewidth=0.33, , alpha=0.25) +
+#   scale_color_viridis_d(option="cividis", guide="none") +
+#   facet_wrap(~facet, scales="free", space="free_x") +
+#   theme_classic()
+#
 
 
 
