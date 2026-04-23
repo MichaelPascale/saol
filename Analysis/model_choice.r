@@ -6,10 +6,11 @@
 
 choice_models <- tibble::tribble(
   ~name,           ~fn,
-  "linear",        quote(purrr::partial(glm, outcome ~ -1 + blur + position,             "binomial", method=brglm2::brglm_fit)),
-  "quadratic",     quote(purrr::partial(glm, outcome ~ -1 + blur * I(blur^2) + position, "binomial", method=brglm2::brglm_fit)),
-  "lin_sigma",     quote(purrr::partial(glm, outcome ~ -1 + sigma + position,            "binomial", method=brglm2::brglm_fit)),
-  "lin_combined",  quote(purrr::partial(glm, outcome ~ -1 + sigma + blur + position,     "binomial", method=brglm2::brglm_fit))
+  "linear",        quote(purrr::partial(glm, outcome ~ blur + position,             "binomial", method=brglm2::brglm_fit)),
+  "quadratic",     quote(purrr::partial(glm, outcome ~ blur * I(blur^2) + position, "binomial", method=brglm2::brglm_fit)),
+  "lin_sigma",     quote(purrr::partial(glm, outcome ~ sigma + position,            "binomial", method=brglm2::brglm_fit)),
+  "lin_combined",  quote(purrr::partial(glm, outcome ~ sigma + blur + position,     "binomial", method=brglm2::brglm_fit)),
+  "quadratic_abs", quote(purrr::partial(glm, outcome ~ abs_blur * I(abs_blur^2) + position, "binomial", method=brglm2::brglm_fit))
 )
 
 first_entries <- function (all_entries, all_stimtab) {
@@ -25,8 +26,13 @@ first_entries <- function (all_entries, all_stimtab) {
     # Mean center the blur assignments.
     blur=blur-mean(blur),
     # A combined factor accounts for physical position and serial order of arms.
-    position = factor(if_else(direction == 0, arm, arm+8)),
+    position = relevel(factor(if_else(direction == 0, arm, arm+8)), ref="14"),
     sigma = scale(log(sigma))[,1]
+  ) |>
+  mutate(
+    .by=c(subject, trial),
+    # Include models of absolute ordering of blur levels (i.e. by per-image sigma).
+    abs_blur=order(sigma) - 4.5
   )
 }
 
@@ -41,14 +47,17 @@ run_model_subject <- function (model, data) {
 }
 
 plot_models_summary <- function (models_df) {
+
   unnest(models_df, results) |>
   mutate(
     facet=case_when(
+        str_detect(term, "Intercept") ~ 0,
         str_detect(term, "blur|sigma") ~ 1,
         str_detect(term, "n[1-8]$") ~ 2,
         str_detect(term, "n(9|1\\d)$") ~ 3
       ) |>
-      factor(1:3, c(
+      factor(0:3, c(
+        "Intercept",
         "Effect of Blur",
         "Mean Offsets - Arm Position (CW)",
         "Mean Offsets - Arm Position (CCW)"
@@ -56,26 +65,32 @@ plot_models_summary <- function (models_df) {
     ),
     term = factor(
       term,
-      c("blur",
+      c("(Intercept)",
+        "blur",
         "I(blur^2)",
         "blur:I(blur^2)",
         "sigma",
+        "abs_blur",
+        "I(abs_blur^2)",
+        "abs_blur:I(abs_blur^2)",
         paste0("position", 1:16)
       ),
-      c("L", "Q", "LxQ", "Abs. Sigma (px)", paste0("P",1:16))
+      c("P14", "L", "Q", "LxQ", "Abs. Sigma (px)", "L (abs.)", "Q (abs.)", "LxQ (abs.)", paste0("P",1:16))
     )
   ) |>
   ggplot(aes(term, estimate, color=subject)) +
   geom_line(aes(group=subject),  linewidth=0.33, alpha=0.15) +
-  stat_summary(geom="pointrange", color="darkred", position=position_nudge(x=.2), size=.3) +
+  stat_summary(geom="pointrange", color="#ab1c0c", position=position_nudge(x=.2), size=.3) +
   geom_point() +
   scale_color_viridis_d(option="cividis", guide="none") +
   facet_wrap(~facet, scales="free", space="free_x") +
-  theme_classic() +
   labs(
+    title="Subject Level Logit Models Predicting Arm Entry",
     subtitle=deparse(models_df$model[[1]]$formula),
-    y="Estimate",
-    x="Model Term"
+    y="Coefficient Estimate (Log-Odds)",
+    x="Model Term",
+    caption="The sixth arm in the counter-clockwise view order (P14) had the lowest average entry probability and was chosen as the reference level for the categorical position variable."
   )
 }
+
 

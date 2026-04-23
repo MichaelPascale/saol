@@ -37,7 +37,7 @@ load_tsv <- \(file) extract(read_tsv(file, id="file"), file, "subject", "/(PCRM\
 # Files to load per-participant.
 sbj_targets <-
   tar_map(
-    values=list(ptpt=sprintf("PCRM%03d", c(1:2, 4:16, 18))),
+    values=list(ptpt=sprintf("PCRM%03d", c(1:2, 4:16, 18:19))),
 
     # Trajectory and effort data files. Stimulus presentation order table.
     tar_file(position_file, dir(file.path("data", "v0.1", ptpt), "^PoseData.*\\.tsv", full.names = T)),
@@ -65,7 +65,7 @@ mdl_targets <- tar_map(
              ggsave(file.path("output", paste0("glm_", name, ".pdf")), plots_choice_glm, cairo_pdf, width=8, height=4), format="file")
 )
 
-list(
+targets <- list(
   # The maze environment's 3D mesh for visualization.
   tar_file(envir_model_file, "models/maze/RadialMaze8Arm_v1.obj"),
   tar_target(envir_layout, load_layout_maze(envir_model_file)),
