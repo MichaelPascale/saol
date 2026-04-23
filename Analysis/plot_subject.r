@@ -7,10 +7,6 @@
 
 plot_subject <- function (ptpt, position, effort, stimtab, envir_layout) {
 
-  # FIXME: The ggplot theme does not get set when running in parallel targets subprocesses.
-  theme_set(theme_classic() + theme(text=element_text(size=9,  family="Ysabeau Office")))
-
-
   # Define the radius of the circle around each arm end that determines whether
   # or not the participant was counted as present in the arm end.
   radius_to_detect = 22

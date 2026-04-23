@@ -62,7 +62,7 @@ mdl_targets <- tar_map(
   tar_target(glm, run_model_subject(fn, first_entries(all_entries, all_stimtab)), packages=c("brglm2", "broom")),
   tar_target(plots_choice_glm, plot_models_summary(glm)),
   tar_target(plots_choice_glm_pdf,
-             ggsave(file.path("output", paste0("glm_", name, ".pdf")), plots_choice_glm, cairo_pdf, width=10, height=4), format="file")
+             ggsave(file.path("output", paste0("glm_", name, ".pdf")), plots_choice_glm, cairo_pdf, width=8, height=4), format="file")
 )
 
 list(
@@ -105,4 +105,17 @@ list(
   tar_target(plots_stim_pdf,
              ggsave(file.path("output", "stimlevel.pdf"), plots_stim, cairo_pdf, width=11, height=8.5),
              format = "file")
+)
+
+# Set the ggplot theme for figure targets.
+tar_hook_outer(
+  targets,
+  .x & (theme_classic() + theme(
+    text = element_text(size=9, family="Crimson Pro Light"),
+    plot.title = element_text(family="Ysabeau Semibold"),
+    title = element_text(family="Ysabeau"),
+    strip.text = element_text(family="Ysabeau Medium"),
+    plot.subtitle =element_text(family="Ysabeau")
+  )),
+  names=starts_with("plots") & !contains("pdf")
 )

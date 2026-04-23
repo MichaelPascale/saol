@@ -6,8 +6,6 @@
 
 plot_stimulus <- function (all_data, all_entries, blurlevels, envir_layout) {
 
-  theme_set(theme_classic() + theme(text=element_text(size=9,  family="Ysabeau Office")))
-
   # Position density plot.
   p1 <- filter(all_data, between(time, 0, 45), distance > 7.5, trial > 20) |>
     ggplot() +
