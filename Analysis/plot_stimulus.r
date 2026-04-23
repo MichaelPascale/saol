@@ -19,7 +19,7 @@ plot_stimulus <- function (all_data, all_entries, blurlevels, envir_layout) {
       y="Z-Position"
     )
 
-  p2 <- ggplot(all_entries, aes(y=entry, x=time)) +
+  p2 <- ggplot(all_entries, aes(y=entry, x=time_entry)) +
     geom_point(
       position=position_jitterdodge(jitter.height = .4, jitter.width = 0, dodge.width = 0),
       alpha=0.5
@@ -40,18 +40,18 @@ plot_stimulus <- function (all_data, all_entries, blurlevels, envir_layout) {
   #   )
 
   p3 <- ggplot(filter(all_entries, entry==1)) +
-    geom_bar(aes(x=blur)) +
+    geom_bar(aes(x=chose_blur)) +
     facet_wrap(vars(subject)) +
     labs(title="Per-Subject First Arm Entry by Blur Assignment")
 
   p4 <- ggplot(filter(all_entries, entry==1)) +
-    geom_bar(aes(x=blur)) +
+    geom_bar(aes(x=chose_blur)) +
     labs(title="Overall First Arm Entry by Blur Assignment")
 
   # Find the stimuli which had the most first-entries.
-  stimfe <- all_entries |> filter(entry == 1) |> filter(.by=uniqueID, n() > 4)
+  stimfe <- all_entries |> filter(entry == 1) |> filter(.by=chose_uniqueID, n() > 4)
 
-  stimfe_imageset <- left_join(distinct(stimfe, uniqueID), blurlevels) |>
+  stimfe_imageset <- left_join(distinct(stimfe, uniqueID=chose_uniqueID), blurlevels) |>
     mutate(img = str_glue("{uniqueID}_{blur}.jpg"))
 
   imgfiles <- dir("stimuli/generated_20260203", "\\.jpg$", full.names=T)
@@ -87,15 +87,15 @@ plot_stimulus <- function (all_data, all_entries, blurlevels, envir_layout) {
     theme(legend.position="bottom")
 
   p7 <- ggplot(stimfe) +
-    geom_bar(aes(x=blur)) +
-    facet_wrap(vars(uniqueID)) +
+    geom_bar(aes(x=chose_blur)) +
+    facet_wrap(vars(chose_uniqueID)) +
     labs(
       title="Per-Image Response Frequencies",
       subtitle="\"High-Curiosity\" Stimuli Only, All Subjects"
     )
 
   p8 <- ggplot(stimfe) +
-    geom_density(aes(x=blur, color=uniqueID)) +
+    geom_density(aes(x=chose_blur, color=chose_uniqueID)) +
     guides(color="none") +
     labs(
       title="Per-Image Response Probability Estimates",

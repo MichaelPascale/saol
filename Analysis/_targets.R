@@ -15,6 +15,7 @@ tar_option_set(
   packages=c(
     "dplyr",
     "tidyr",
+    "vctrs",
     "ggplot2",
     "readr",
     "stringr",
@@ -45,6 +46,7 @@ sbj_targets <-
     tar_file(stimtab_file,  dir(file.path("data", "v0.1", ptpt), "^\\d+\\.tsv",       full.names = T)),
 
     tar_target(position, load_position(position_file, stimtab)),
+    tar_target(entries,  process_entries(position, stimtab)),
     tar_target(effort,   load_effort(effort_file, position)),
     tar_target(stimtab,  load_tsv(stimtab_file)),
 
@@ -89,15 +91,10 @@ targets <- list(
   # Aggregated targets.
   tar_combine(all_data, sbj_targets[["position"]]),
   tar_combine(all_stimtab, sbj_targets[["stimtab"]]),
+  tar_combine(all_effort, sbj_targets[["effort"]]),
+  tar_combine(all_entries, sbj_targets[["entries"]]),
 
-  # Arm entry timepoints.
-  tar_target(all_entries, {
-    drop_na(all_data, arm) |>
-      # Keep the first entry and subsequent changes.
-      filter(.by=c(subject, trial), row_number() == 1 | arm != lag(arm)) |>
-      mutate(.by=c(subject, trial), entry=row_number(), .before=time)
-  }),
-
+  # Modeling targets.
   mdl_targets,
 
   # Create group-level summary plots.

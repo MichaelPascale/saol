@@ -15,7 +15,7 @@ choice_models <- tibble::tribble(
 
 first_entries <- function (all_entries, all_stimtab) {
   filter(all_entries, entry == 1) |>
-  select(subject, trial, chose_arm=arm, chose_blur=blur) |>
+  select(subject, trial, chose_arm, chose_blur) |>
   left_join(all_stimtab, relationship = "one-to-many") |>
   mutate(
     # The viewing order (left/right scan of options) alternates each trial.

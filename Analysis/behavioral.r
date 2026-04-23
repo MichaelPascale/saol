@@ -53,3 +53,23 @@ load_effort <- function (path, position) {
     # rate over only the last second.
     filter(iki < 1)
 }
+
+# Extract arm entry and exit times from the trajectory timeseries.
+process_entries <- function (position, stimtab) {
+    group_by(position, subject, trial) |>
+    filter(!vec_equal(arm, lag(arm), na_equal=T)) |>
+    mutate(
+      entry=floor((row_number() - 1)/2) + 1,
+      timepoint=factor((row_number() - 1) %% 2, 0:1, c("entry", "exit"))
+    ) |>
+    fill(arm) |>
+    ungroup() |>
+    pivot_wider(
+      id_cols=c(subject, trial, entry, arm),
+      names_from=timepoint,
+      values_from=c(time, realtime)
+    ) |>
+    mutate(complete_event=!is.na(time_exit), .after=arm) |>
+    left_join(select(stimtab, subject, trial, arm, chose_blur=blur, chose_uniqueID=uniqueID)) |>
+    rename(chose_arm=arm)
+}
