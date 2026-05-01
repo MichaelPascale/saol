@@ -111,39 +111,121 @@ b <- read_delim("boundary2.obj", " ", comment="#", col_names = c("type", "x", "z
 l <- filter(b, type == 'l') |> mutate(edge=row_number()) |> select(edge, i=x, j=z)
 v <- filter(b, type == 'v') |> mutate(i = row_number())
 
-# left_join(left_join(l, v), select(v, x2=x,z2=z, j=i))  |>
-  left_join(
-    l,
-    data.frame(
-      arm=rep(1:8, each=7),
-      edge=c(
-        # Originally I wasn't doing this in order.
-        # 27,28,29,30,31,26,11,
-        # 32,33,34,36,35,1,25,
-        # 39,40,41,42,43,38,23,
-        # 45,46,47,48,49,44,21,
-        # 51,52,53,54,55,50,19,
-        # 57,58,59,60,61,56,17,
-        # 63,64,65,66,67,62,15,
-        # 5,6,7,8,9,2,3
-        6, 7, 16, 17, 48, 49, 50,
-        1, 13, 18, 31, 51, 52, 53,
-        14, 15, 19, 20, 54, 55, 56,
-        12, 21, 22, 23, 45, 57, 58,
-        10, 24, 25, 44, 59, 60, 61,
-        9, 26, 27, 28, 42, 62, 63,
-        8, 29, 30, 40, 64, 65, 66,
-        2, 3, 4, 5, 32, 33, 34
-      ))
-  ) |>
-    left_join(v) |>
-    left_join(select(v, x2=x,z2=z, j=i)) |>
+
+left_join(
+  l,
+  data.frame(
+    arm=rep(1:8, each=7),
+    edge=c(
+
+      6, 7, 16, 17, 48, 49, 50,
+      1, 13, 18, 31, 51, 52, 53,
+      14, 15, 19, 20, 54, 55, 56,
+      12, 21, 22, 23, 45, 57, 58,
+      10, 24, 25, 44, 59, 60, 61,
+      9, 26, 27, 28, 42, 62, 63,
+      8, 29, 30, 40, 64, 65, 66,
+      2, 3, 4, 5, 32, 33, 34
+    ))
+) |>
+  left_join(v) |>
+  left_join(select(v, x2=x,z2=z, j=i)) |>
   select(-type,-y,edge,arm,x1=x,z1=z,x2,z2, v1=i,v2=j) |>
   ggplot() + geom_segment(aes(x1,z1,xend=x2,yend=z2,color=factor(arm))) +
   geom_text(aes(x=(x1+x2)/2, y=(z1+z2)/2, label=edge), size=3) +
   coord_equal() + theme_classic() + guides(color="none")
 
-left_join(left_join(l, v), select(v, x2=x,z2=z, j=i))  |>
-  select(v1=i,v2=j, edge) |>
-  left_join(
-  boundary |> drop_na(arm) |> distinct(arm,v1,v2) )|> arrange(arm,edge) |> drop_na(arm) |> pull(edge) |> matrix(ncol=7,byrow=T)
+
+boundary |> pivot_longer(c(v1,v2,x1:z2),names_to=c(".value", "p"), names_pattern="(x|z|v)(\\d)") |>
+  filter(arm==1) |> nest(mat=c(x,z),.by=edge) |> mutate(mat=map(mat, as.matrix)) |> pull(mat) |> st_multilinestring() |> plot()
+
+sfbounds <- boundary |>
+  pivot_longer(c(v1,v2,x1:z2),names_to=c(".value", "p"), names_pattern="(x|z|v)(\\d)") |>
+  nest(mat=c(x,z),.by=c(arm, edge)) |>
+  summarize(.by=arm, bounding_mls=st_sfc(st_multilinestring(map(mat, as.matrix))))
+
+ggplot(sfbounds) + geom_sf(aes(geometry=bounding_mls, color=arm))
+
+
+
+all_data |>
+  left_join(stimloc) |>
+  mutate(
+    theta_pos_rel_stim  = ((((atan2(x_stim-x, z_stim-z) * 180/pi))+180) %%360),
+    theta_head_rel_stim = abs(pmin(heading - theta_pos_rel_stim, theta_pos_rel_stim - heading)),
+    theta_head_rel_stim = 180 - abs(((theta_head_rel_stim + 180) %% 360) - 180),
+    #
+    #     x = x-x_stim,
+    #     z = z-z_stim
+  ) |>
+  filter(distance > 20, theta_head_rel_stim < 30, row_number() %% 1000 == 0) |>
+  left_join(sfbounds) |>
+  rowwise() |>
+  mutate(
+    line=st_sfc(st_linestring(matrix(c_across(c(x,z,x_stim,z_stim)), byrow=T, ncol=2))),
+    obstructed=st_intersects(line, bounding_mls, sparse=F)[,1], .before=x
+  ) |>
+
+  ggplot() +
+  geom_sf(data=sfbounds, aes(geometry=bounding_mls)) +
+  geom_point(aes(x,z, color=obstructed), size=.1) +
+  geom_segment(aes(x,z,xend=x_stim,yend=z_stim, color=obstructed)) +
+  geom_point(aes(x_stim, z_stim), color="red", data=stimloc) +
+  # scale_color_viridis_d(option="cividis") +
+  scale_color_distiller(palette="PiYG") +
+  theme_classic() +
+  guides(color="none")
+
+
+
+all_data |>
+  left_join(stimloc) |>
+  mutate(
+    theta_pos_rel_stim  = ((((atan2(x_stim-x, z_stim-z) * 180/pi))+180) %%360),
+    theta_head_rel_stim = abs(pmin(heading - theta_pos_rel_stim, theta_pos_rel_stim - heading)),
+    theta_head_rel_stim = 180 - abs(((theta_head_rel_stim + 180) %% 360) - 180),
+    #
+    #     x = x-x_stim,
+    #     z = z-z_stim
+  ) |>
+  filter(distance > 8, row_number() %% 500 == 0) |>
+  left_join(sfbounds) |>
+  rowwise() |>
+  mutate(
+    line=st_sfc(st_linestring(matrix(c_across(c(x,z,x_stim,z_stim)), byrow=T, ncol=2))),
+    obstructed=st_intersects(line, bounding_mls, sparse=F)[,1], .before=x
+  ) |>
+  ggplot() +
+  geom_sf(data=sfbounds, aes(geometry=bounding_mls)) +
+  geom_point(aes(x,z, color=theta_head_rel_stim, alpha=if_else(obstructed, .4, .9)), size=.1) +
+  scale_color_viridis_c(option="cividis", limits=c(0,180), breaks=seq(0,360, 90)) +
+  geom_spoke(aes(x,z, angle=-(heading-90) * pi/180, color=theta_head_rel_stim, alpha=if_else(obstructed, .4, .9)), radius=1) +
+  geom_point(aes(x_stim, z_stim), color="red", data=stimloc) +
+  theme_classic() +
+  guides(color="none", alpha="none")
+
+
+
+all_data |>
+  filter(distance > 8, row_number() %%10==0) |>
+  left_join(stimloc) |>
+  mutate(
+    theta_pos_rel_stim  = ((((atan2(x_stim-x, z_stim-z) * 180/pi))+180) %%360),
+    theta_head_rel_stim = abs(pmin(heading - theta_pos_rel_stim, theta_pos_rel_stim - heading)),
+    theta_head_rel_stim = 180 - abs(((theta_head_rel_stim + 180) %% 360) - 180),
+  ) |>
+  left_join(sfbounds) |>
+  rowwise() |>
+  mutate(
+    line=st_sfc(st_linestring(matrix(c_across(c(x,z,x_stim,z_stim)), byrow=T, ncol=2))),
+    obstructed=st_intersects(line, bounding_mls, sparse=F)[,1],
+    obstructed=obstructed | (theta_head_rel_stim > 70)
+  ) |>
+  ggplot() +
+  geom_sf(data=sfbounds, aes(geometry=bounding_mls)) +
+  geom_point(aes(x,z, color=theta_head_rel_stim, alpha=if_else(obstructed, .2, .8)), size=.1) +
+  scale_color_viridis_c(option="cividis", limits=c(0,180), breaks=seq(0,360, 90)) +
+  geom_spoke(aes(x,z, angle=-(heading-90) * pi/180, color=theta_head_rel_stim, alpha=if_else(obstructed, .2, .8)), radius=1) +
+  geom_point(aes(x_stim, z_stim), color="red", data=stimloc) +
+  theme_classic() +
+  guides(color="none", alpha="none")
