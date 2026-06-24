@@ -2,91 +2,85 @@ library(OpenImageR)
 library(stringr)
 library(dplyr)
 library(purrr)
-library(ggplot2)
+
 
 calc_image_metrics <- function(filename){
   message(filename)
   my_pic <- readImage(filename)
   my_pic <- RGB_to_Lab(my_pic * 255)
-  
   data.frame( 
     luminance = mean(my_pic[,,1]),
     contrast = sd(my_pic[,,1]),
     file = filename
-    )
+  )
 }
 
-
-#calc_lum <- function(filename){
-#  my_pic <- readImage(filename)
-#  my_pic <- RGB_to_Lab(my_pic * 255)
-#  mean(my_pic[,,1])
-#}
-
-#calc_contrast <- function(filename){
-
-#  my_pic <- readImage(filename)
-#  my_pic <- RGB_to_Lab(my_pic * 255)
-#  sd(my_pic[,,1])
-# Do these things once, have one function
-#}
-
 files <- dir("/Users/caglalev/Desktop/UROP 26/pcrmsp26_blurred_stimuli", full.names = TRUE)
-
-image_metrics <- map(files, calc_image_metrics) |>
-  
-  bind_rows()
-
-#image_metrics <- vector("list", length(files))
-
-#contrast <- numeric(length(files))
-#loom <- numeric(length(files))
-
-#for (i in seq_along(files)) {
-#  message(files[i])
-#  image_metrics[[i]] <- calc_image_metrics(files[i])
-#}
-
-#for (i in seq_along(files)) {
-#  message(files[i])
-#  loom[i] <- calc_lum(files[i])
-#  contrast[i] <- calc_contrast(files[i])
-#}
-
-image_metrics <-
-  mutate(image_metrics,
-    base_name = str_remove(basename(file), "\\.jpe?g$"),
+image_metrics <- map(files, calc_image_metrics) |> bind_rows() |>
+  mutate(
+    base_name = str_remove(basename(file), "\\.(jpe?g|png)$"),
     uniqueID = str_extract(base_name, "^.*?(?=\\_\\d)|.+"),
-    blur = coalesce(as.numeric(str_remove(str_extract(base_name, "_\\d+$"),"_")),0)
+    blur = coalesce(as.numeric(str_extract(base_name, "(?<=_)\\d+$")), 0)
+  ) |>
+  select(-base_name, -file)
+
+all_data <- readRDS("/Users/caglalev/Desktop/UROP 26/data_form_model_allsubjects.rds")
+result <- left_join(all_data, image_metrics, by = c("uniqueID", "blur")) |> mutate(blur=blur-mean(blur))
+saveRDS(result, "/Users/caglalev/Desktop/UROP 26/result_allsubjects_with_metrics.rds")
+
+list_subject <- unique(result$subject)
+models <- list()
+model_coefficients <- list()
+for (subject in list_subject) {
+  fit_model <- glm(outcome ~ poly(blur,2) + position +contrast + luminance, data = result[result$subject == subject,], family = "binomial")
+  models <- c(models, list(fit_model))
+  model_coefficients <- c(model_coefficients, list(data.frame(t(coef(fit_model))))
   )
+}
 
-#image_metrics <- data.frame(
-#  contrast = contrast,
-#  luminance = loom,
-#  base_name = str_remove(basename(files), "\\.jpe?g$")
-#) |>
-#  mutate(
-#    uniqueID = str_extract(base_name, "^.*?(?=\\_\\d)|.+"),
-#    blur = coalesce(as.numeric(str_remove(str_extract(base_name, "_\\d+$"),"_")),0)
-#  )
+coef_df <- bind_rows(model_coefficients) 
 
-
-file_path <- "/Users/caglalev/Desktop/UROP 26/data_for_model_pcrm004.rds"
-
-RDS_data <- readRDS(file_path)
-RDS_data <- mutate(RDS_data, blur = blur + 4.5)
-
-
-result <- left_join(
-  RDS_data,
-  image_metrics |> select(-"base_name"),
-  by = c("uniqueID", "blur")
+t.test( 
+  coef_df$poly.blur..2.1,
+  alternative = "two.sided",
+  paired = FALSE,
+  var.equal = TRUE,
+  conf.level = 0.95
 )
 
-saveRDS(result, "/Users/caglalev/Desktop/UROP 26/data_for_model_pcrm004_with_metrics.rds")
-result <- readRDS("/Users/caglalev/Desktop/UROP 26/data_for_model_pcrm004_with_metrics.rds")
-glm(outcome ~ blur + contrast + luminance, data = result, family = "binomial")
-log_regression <- glm(outcome ~ contrast + blur + luminance, data = result)
+t.test( 
+  coef_df$poly.blur..2.2,
+  alternative = "two.sided",
+  paired = FALSE,
+  var.equal = TRUE,
+  conf.level = 0.95
+)
 
+t.test( 
+  coef_df$contrast,
+  alternative = "two.sided",
+  paired = FALSE,
+  var.equal = TRUE,
+  conf.level = 0.95
+)
 
+t.test( 
+  coef_df$luminance,
+  alternative = "two.sided",
+  paired = FALSE,
+  var.equal = TRUE,
+  conf.level = 0.95
+)
+
+coef_df <- bind_rows(model_coefficients) |>
+  mutate(subject = list_subject) |>
+  tidyr::pivot_longer(-subject, names_to = "predictor", values_to = "estimate") |>
+  filter(predictor != "X.Intercept.")
+
+ggplot(coef_df, aes(x = predictor, y = subject, fill = estimate)) +
+  geom_tile() + scale_fill_gradient2(
+    low = "yellow", mid = "lightblue", high = "purple",
+    midpoint = 0,
+    # limits = c(-1, 1)
+  )
 
