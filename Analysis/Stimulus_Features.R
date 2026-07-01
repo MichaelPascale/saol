@@ -2,6 +2,10 @@ library(OpenImageR)
 library(stringr)
 library(dplyr)
 library(purrr)
+library(brglm2)
+library(exifr)
+library(ggplot2)
+
 
 
 calc_image_metrics <- function(filename){
@@ -25,14 +29,19 @@ image_metrics <- map(files, calc_image_metrics) |> bind_rows() |>
   select(-base_name, -file)
 
 all_data <- readRDS("/Users/caglalev/Desktop/UROP 26/data_form_model_allsubjects.rds")
-result <- left_join(all_data, image_metrics, by = c("uniqueID", "blur")) |> mutate(blur=blur-mean(blur))
+result <- left_join(all_data, image_metrics, by = c("uniqueID", "blur")) |> mutate(
+  blur = scale(blur)[,1],
+  luminance = scale(luminance)[,1],
+  contrast = scale(contrast)[,1])
+
 saveRDS(result, "/Users/caglalev/Desktop/UROP 26/result_allsubjects_with_metrics.rds")
+
 
 list_subject <- unique(result$subject)
 models <- list()
 model_coefficients <- list()
 for (subject in list_subject) {
-  fit_model <- glm(outcome ~ poly(blur,2) + position +contrast + luminance, data = result[result$subject == subject,], family = "binomial")
+  fit_model <- glm(outcome ~ poly(blur,2) + position +contrast + luminance, data = result[result$subject == subject,], family = "binomial", method = brglmFit)
   models <- c(models, list(fit_model))
   model_coefficients <- c(model_coefficients, list(data.frame(t(coef(fit_model))))
   )
@@ -84,3 +93,46 @@ ggplot(coef_df, aes(x = predictor, y = subject, fill = estimate)) +
     # limits = c(-1, 1)
   )
 
+
+metadata <- read_exif(files)
+metadata %>% 
+  select(any_of(c("FileName", "FileSize", "FileType", "ImageWidth", "ImageHeight", 
+                  "Compression", "Megapixels", "ColorSpace", "ProfileName")))
+metadata <- metadata %>% 
+  select(matches("Name|Length|Size|Image|Profile|Thumb"))
+
+size_table <- metadata %>%
+  select(FileName, FileSize, ThumbnailLength) %>%
+  mutate(
+    content_size = coalesce(FileSize - ThumbnailLength, FileSize), 
+    uniqueID = str_remove(FileName, "\\.(jpe?g|png)$"),
+    blur = coalesce(as.numeric(str_extract(uniqueID, "(?<=_)\\d+$")), 0),
+    uniqueID = str_extract(uniqueID, "^.*?(?=\\_\\d)|.+"),
+  ) %>%
+  select(-FileName)
+
+result_jpeg <- left_join(all_data, size_table, by = c("uniqueID", "blur")) |> mutate(
+  blur = scale(blur)[,1],
+  content_size = scale(content_size)[,1])
+ 
+list_subject <- unique(result_jpeg$subject)
+models <- list()
+model_coefficients <- list()
+for (subject in list_subject) {
+  fit_model <- glm(outcome ~ poly(blur,2) + position + content_size, data = result_jpeg[result_jpeg$subject == subject,], family = "binomial", method = brglmFit)
+  models <- c(models, list(fit_model))
+  model_coefficients <- c(model_coefficients, list(data.frame(t(coef(fit_model))))
+  )
+}
+
+coef_df <- bind_rows(model_coefficients) |>
+  mutate(subject = list_subject) |>
+  tidyr::pivot_longer(-subject, names_to = "predictor", values_to = "estimate") |>
+  filter(predictor != "X.Intercept.")
+
+ggplot(coef_df, aes(x = predictor, y = subject, fill = estimate)) +
+  geom_tile() + scale_fill_gradient2(
+    low = "yellow", mid = "lightblue", high = "purple",
+    midpoint = 0,
+    # limits = c(-1, 1)
+  )
