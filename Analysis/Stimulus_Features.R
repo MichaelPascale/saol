@@ -134,5 +134,63 @@ ggplot(coef_df, aes(x = predictor, y = subject, fill = estimate)) +
   geom_tile() + scale_fill_gradient2(
     low = "yellow", mid = "lightblue", high = "purple",
     midpoint = 0,
-    # limits = c(-1, 1)
   )
+
+
+calc_image_metrics_saturation <- function(filename){
+  message(filename)
+  my_pic <- readImage(filename)
+  my_pic <- RGB_to_HSV(my_pic * 255)
+  saturation <- (my_pic[,,2])
+  saturation[is.nan(saturation)] <- 0
+  data.frame( 
+    saturation = mean(saturation),
+    file = filename
+  )
+}
+
+files <- dir("/Users/caglalev/Desktop/UROP 26/pcrmsp26_blurred_stimuli", full.names = TRUE)
+image_metrics <- map(files, calc_image_metrics_saturation) |> bind_rows() |>
+  mutate(
+    base_name = str_remove(basename(file), "\\.(jpe?g|png)$"),
+    uniqueID = str_extract(base_name, "^.*?(?=\\_\\d)|.+"),
+    blur = coalesce(as.numeric(str_extract(base_name, "(?<=_)\\d+$")), 0)
+  ) |>
+  select(-base_name, -file)
+
+
+all_data <- readRDS("/Users/caglalev/Desktop/UROP 26/data_form_model_allsubjects.rds")
+result_saturation <- left_join(all_data, image_metrics, by = c("uniqueID", "blur")) |> mutate(
+  blur = scale(blur)[,1],
+  saturation = scale(saturation)[,1])
+
+
+list_subject <- unique(result_saturation$subject)
+models <- list()
+model_coefficients <- list()
+for (subject in list_subject) {
+  fit_model <- glm(outcome ~ poly(blur,2) + position + saturation, data = result_saturation[result_jpeg$subject == subject,], family = "binomial", method = brglmFit)
+  models <- c(models, list(fit_model))
+  model_coefficients <- c(model_coefficients, list(data.frame(t(coef(fit_model))))
+  )
+}
+
+coef_df <- bind_rows(model_coefficients) |>
+  mutate(subject = list_subject) |>
+  tidyr::pivot_longer(-subject, names_to = "predictor", values_to = "estimate") |>
+  filter(predictor != "X.Intercept.")
+
+ggplot(coef_df, aes(x = predictor, y = subject, fill = estimate)) +
+  geom_tile() + scale_fill_gradient2(
+    low = "yellow", mid = "lightblue", high = "purple",
+    midpoint = 0,
+  )
+
+
+t.test( 
+  coef_df$estimate[coef_df$predictor == "saturation"],
+  alternative = "two.sided",
+  paired = FALSE,
+  var.equal = TRUE,
+  conf.level = 0.95
+)
