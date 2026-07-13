@@ -7,7 +7,6 @@ library(exifr)
 library(ggplot2)
 
 
-
 calc_image_metrics <- function(filename){
   message(filename)
   my_pic <- readImage(filename)
@@ -35,7 +34,6 @@ result <- left_join(all_data, image_metrics, by = c("uniqueID", "blur")) |> muta
   contrast = scale(contrast)[,1])
 
 saveRDS(result, "/Users/caglalev/Desktop/UROP 26/result_allsubjects_with_metrics.rds")
-
 
 list_subject <- unique(result$subject)
 models <- list()
@@ -93,7 +91,6 @@ ggplot(coef_df, aes(x = predictor, y = subject, fill = estimate)) +
     # limits = c(-1, 1)
   )
 
-
 metadata <- read_exif(files)
 metadata %>% 
   select(any_of(c("FileName", "FileSize", "FileType", "ImageWidth", "ImageHeight", 
@@ -136,7 +133,6 @@ ggplot(coef_df, aes(x = predictor, y = subject, fill = estimate)) +
     midpoint = 0,
   )
 
-
 calc_image_metrics_saturation <- function(filename){
   message(filename)
   my_pic <- readImage(filename)
@@ -158,12 +154,10 @@ image_metrics <- map(files, calc_image_metrics_saturation) |> bind_rows() |>
   ) |>
   select(-base_name, -file)
 
-
 all_data <- readRDS("/Users/caglalev/Desktop/UROP 26/data_form_model_allsubjects.rds")
 result_saturation <- left_join(all_data, image_metrics, by = c("uniqueID", "blur")) |> mutate(
   blur = scale(blur)[,1],
   saturation = scale(saturation)[,1])
-
 
 list_subject <- unique(result_saturation$subject)
 models <- list()
@@ -186,7 +180,6 @@ ggplot(coef_df, aes(x = predictor, y = subject, fill = estimate)) +
     midpoint = 0,
   )
 
-
 t.test( 
   coef_df$estimate[coef_df$predictor == "saturation"],
   alternative = "two.sided",
@@ -194,3 +187,10 @@ t.test(
   var.equal = TRUE,
   conf.level = 0.95
 )
+
+ggplot(data = filter(size_table,blur >= 0), aes(x = blur, y = content_size, color = uniqueID)) +
+  geom_line(alpha = 0.2) +
+  guides(color = "none")
+
+
+
