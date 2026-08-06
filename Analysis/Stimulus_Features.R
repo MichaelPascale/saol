@@ -5,6 +5,7 @@ library(brglm2)
 library(exifr)
 library(ggplot2)
 library(imager)
+library(rstatix)
 #library(magick)
 
 calc_image_metrics_combined <- function(filename){
@@ -160,17 +161,19 @@ result <- left_join(result, size_table, by = c("uniqueID", "blur")) |> mutate(
 list_subject <- unique(result$subject)
 models <- list()
 model_coefficients <- list()
-luminance_contrast <- for (subject in list_subject) {
+AIC <- list()
+for (subject in list_subject) {
   fit_model <- glm(outcome ~ poly(blur,2) + position +contrast + luminance, data = result[result$subject == subject,], family = "binomial", method = brglmFit)
   models <- c(models, list(fit_model))
   model_coefficients <- c(model_coefficients, list(data.frame(t(coef(fit_model))))
   )
+  AIC_luminance_contrast <- append(AIC,fit_model$aic)
 }
 
-coef_df <- bind_rows(model_coefficients) 
+coef_df_luminance_contrast <- bind_rows(model_coefficients) 
 
 t.test( 
-  coef_df$poly.blur..2.1,
+  coef_df_luminance_contrast$poly.blur..2.1,
   alternative = "two.sided",
   paired = FALSE,
   var.equal = TRUE,
@@ -178,7 +181,7 @@ t.test(
 )
 
 t.test( 
-  coef_df$poly.blur..2.2,
+  coef_df_luminance_contrast$poly.blur..2.2,
   alternative = "two.sided",
   paired = FALSE,
   var.equal = TRUE,
@@ -186,7 +189,7 @@ t.test(
 )
 
 t.test( 
-  coef_df$contrast,
+  coef_df_luminance_contrast$contrast,
   alternative = "two.sided",
   paired = FALSE,
   var.equal = TRUE,
@@ -194,19 +197,26 @@ t.test(
 )
 
 t.test( 
-  coef_df$luminance,
+  coef_df_luminance_contrast$luminance,
   alternative = "two.sided",
   paired = FALSE,
   var.equal = TRUE,
   conf.level = 0.95
 )
 
-coef_df <- bind_rows(model_coefficients) |>
+coef_df_luminance_contrast <- bind_rows(model_coefficients) |>
   mutate(subject = list_subject) |>
   tidyr::pivot_longer(-subject, names_to = "predictor", values_to = "estimate") |>
-  filter(predictor != "X.Intercept.")
+  filter(predictor != "X.Intercept.") |>
+  mutate(model_name = "luminance_contrast")
 
-ggplot(coef_df, aes(x = predictor, y = subject, fill = estimate)) +
+#coef_df_poly.blur..2.1 <- bind_rows(model_coefficients) |>
+  #mutate(subject = list_subject) |>
+  #tidyr::pivot_longer(-subject, names_to = "predictor", values_to = "estimate") |>
+  #filter(predictor != "X.Intercept.") |>
+  #mutate(model_name = poly.blur..2.1)
+
+ggplot(coef_df_luminance_contrast, aes(x = predictor, y = subject, fill = estimate)) +
   geom_tile() + scale_fill_gradient2(
     low = "yellow", mid = "lightblue", high = "purple",
     midpoint = 0,
@@ -216,47 +226,85 @@ ggplot(coef_df, aes(x = predictor, y = subject, fill = estimate)) +
 list_subject <- unique(result$subject)
 models <- list()
 model_coefficients <- list()
-file_size <- for (subject in list_subject) {
-  fit_model <- glm(outcome ~ poly(blur,2) + position + FileSize, data = result[result$subject == subject,], family = "binomial", method = brglmFit)
+AIC_file_size <- list()
+for (subject in list_subject) {
+  fit_model <- glm(outcome ~ poly(blur,2) + position + poly(FileSize,2), data = result[result$subject == subject,], family = "binomial", method = brglmFit)
   models <- c(models, list(fit_model))
   model_coefficients <- c(model_coefficients, list(data.frame(t(coef(fit_model))))
   )
+  AIC_file_size <- c(AIC_file_size,list(fit_model$aic))
 }
 
-coef_df <- bind_rows(model_coefficients) |>
+coef_df_file_size <- bind_rows(model_coefficients) |>
   mutate(subject = list_subject) |>
   tidyr::pivot_longer(-subject, names_to = "predictor", values_to = "estimate") |>
-  filter(predictor != "X.Intercept.")
+  filter(predictor != "X.Intercept.")|>
+  mutate(model_name = "file_size")
 
-ggplot(coef_df, aes(x = predictor, y = subject, fill = estimate)) +
-  geom_tile() + scale_fill_gradient2(
-    low = "yellow", mid = "lightblue", high = "purple",
-    midpoint = 0,
-  )
-
-list_subject <- unique(result$subject)
-models <- list()
-model_coefficients <- list()
-saturation <- for (subject in list_subject) {
-  fit_model <- glm(outcome ~ poly(blur,2) + position + saturation, data = result[result$subject == subject,], family = "binomial", method = brglmFit)
-  models <- c(models, list(fit_model))
-  model_coefficients <- c(model_coefficients, list(data.frame(t(coef(fit_model))))
-  )
-}
-
-coef_df <- bind_rows(model_coefficients) |>
-  mutate(subject = list_subject) |>
-  tidyr::pivot_longer(-subject, names_to = "predictor", values_to = "estimate") |>
-  filter(predictor != "X.Intercept.")
-
-ggplot(coef_df, aes(x = predictor, y = subject, fill = estimate)) +
+ggplot(coef_df_file_size, aes(x = predictor, y = subject, fill = estimate)) +
   geom_tile() + scale_fill_gradient2(
     low = "yellow", mid = "lightblue", high = "purple",
     midpoint = 0,
   )
 
 t.test( 
-  coef_df$estimate[coef_df$predictor == "saturation"],
+  coef_df_file_size$estimate[coef_df_file_size$predictor == "poly.FileSize..2.1"],
+  alternative = "two.sided",
+  paired = FALSE,
+  var.equal = TRUE,
+  conf.level = 0.95
+)
+
+t.test( 
+  coef_df_file_size$estimate[coef_df_file_size$predictor == "poly.FileSize..2.2"],
+  alternative = "two.sided",
+  paired = FALSE,
+  var.equal = TRUE,
+  conf.level = 0.95
+)
+
+t.test( 
+  coef_df_file_size$estimate[coef_df_file_size$predictor == "poly.blur..2.1"],
+  alternative = "two.sided",
+  paired = FALSE,
+  var.equal = TRUE,
+  conf.level = 0.95
+)
+
+t.test( 
+  coef_df_file_size$estimate[coef_df_file_size$predictor == "poly.blur..2.2"],
+  alternative = "two.sided",
+  paired = FALSE,
+  var.equal = TRUE,
+  conf.level = 0.95
+)
+
+list_subject <- unique(result$subject)
+models <- list()
+model_coefficients <- list()
+AIC_saturation <- list()
+for (subject in list_subject) {
+  fit_model <- glm(outcome ~ poly(blur,2) + position + saturation, data = result[result$subject == subject,], family = "binomial", method = brglmFit)
+  models <- c(models, list(fit_model))
+  model_coefficients <- c(model_coefficients, list(data.frame(t(coef(fit_model))))
+  )
+  AIC_saturation <- c(AIC_saturation,list(fit_model$aic))
+}
+
+coef_df_saturation <- bind_rows(model_coefficients) |>
+  mutate(subject = list_subject) |>
+  tidyr::pivot_longer(-subject, names_to = "predictor", values_to = "estimate") |>
+  filter(predictor != "X.Intercept.") |>
+  mutate(model_name = "saturation")
+
+ggplot(coef_df_saturation, aes(x = predictor, y = subject, fill = estimate)) +
+  geom_tile() + scale_fill_gradient2(
+    low = "yellow", mid = "lightblue", high = "purple",
+    midpoint = 0,
+  )
+
+t.test( 
+  coef_df_saturation$estimate[coef_df_saturation$predictor == "saturation"],
   alternative = "two.sided",
   paired = FALSE,
   var.equal = TRUE,
@@ -292,25 +340,28 @@ t.test(
 list_subject <- unique(result$subject)
 models <- list()
 model_coefficients <- list()
-gaze <- for (subject in list_subject) {
+AIC <- list()
+for (subject in list_subject) {
   fit_model <- glm(outcome ~ poly(blur,2) + position + gaze, data = result[result$subject == subject,], family = "binomial", method = brglmFit)
   models <- c(models, list(fit_model))
   model_coefficients <- c(model_coefficients, list(data.frame(t(coef(fit_model))))
   )
+  AIC_gaze <- append(AIC,fit_model$aic)
 }
 
-coef_df <- bind_rows(model_coefficients) |>
+coef_df_gaze <- bind_rows(model_coefficients) |>
   mutate(subject = list_subject) |>
   tidyr::pivot_longer(-subject, names_to = "predictor", values_to = "estimate") |>
-  filter(predictor != "X.Intercept.")
+  filter(predictor != "X.Intercept.") |>
+  mutate(model_name = "gaze")
 
-ggplot(coef_df, aes(x = predictor, y = subject, fill = estimate)) +
+ggplot(coef_df_gaze, aes(x = predictor, y = subject, fill = estimate)) +
   geom_tile() + scale_fill_gradient2(
     low = "yellow", mid = "lightblue", high = "purple",
     midpoint = 0,
   )
 t.test( 
-  coef_df$estimate[coef_df$predictor == "gaze"],
+  coef_df_gaze$estimate[coef_df_gaze$predictor == "gaze"],
   alternative = "two.sided",
   paired = FALSE,
   var.equal = TRUE,
@@ -320,25 +371,28 @@ t.test(
 list_subject <- unique(result$subject)
 models <- list()
 model_coefficients <- list()
-saliance <- for (subject in list_subject) {
+AIC <- list()
+for (subject in list_subject) {
   fit_model <- glm(outcome ~ poly(blur,2) + position + saliance, data = result[result$subject == subject,], family = "binomial", method = brglmFit)
   models <- c(models, list(fit_model))
   model_coefficients <- c(model_coefficients, list(data.frame(t(coef(fit_model))))
   )
+  AIC_saliance <- append(AIC,fit_model$aic)
 }
 
-coef_df <- bind_rows(model_coefficients) |>
+coef_df_saliance <- bind_rows(model_coefficients) |>
   mutate(subject = list_subject) |>
   tidyr::pivot_longer(-subject, names_to = "predictor", values_to = "estimate") |>
-  filter(predictor != "X.Intercept.")
+  filter(predictor != "X.Intercept.") |>
+  mutate(model_name = "saliance")
 
-ggplot(coef_df, aes(x = predictor, y = subject, fill = estimate)) +
+ggplot(coef_df_saliance, aes(x = predictor, y = subject, fill = estimate)) +
   geom_tile() + scale_fill_gradient2(
     low = "yellow", mid = "lightblue", high = "purple",
     midpoint = 0,
   )
 t.test( 
-  coef_df$estimate[coef_df$predictor == "saliance"],
+  coef_df_saliance$estimate[coef_df_saliance$predictor == "saliance"],
   alternative = "two.sided",
   paired = FALSE,
   var.equal = TRUE,
@@ -361,30 +415,60 @@ t.test(
 list_subject <- unique(result$subject)
 models <- list()
 model_coefficients <- list()
-color_entropy <- for (subject in list_subject) {
+AIC <- list()
+for (subject in list_subject) {
     fit_model <- glm(outcome ~ poly(blur,2) + position + entropy, data = result[result$subject == subject,], family = "binomial", method = brglmFit)
     models <- c(models, list(fit_model))
     model_coefficients <- c(model_coefficients, list(data.frame(t(coef(fit_model))))
     )
+    AIC_color_entropy <- append(AIC,fit_model$aic)
   }
-  coef_df <- bind_rows(model_coefficients) |>
+  coef_df_color_entropy <- bind_rows(model_coefficients) |>
     mutate(subject = list_subject) |>
     tidyr::pivot_longer(-subject, names_to = "predictor", values_to = "estimate") |>
-    filter(predictor != "X.Intercept.")
+    filter(predictor != "X.Intercept.") |>
+    mutate(model_name = "color_entropy")
   
-  ggplot(coef_df, aes(x = predictor, y = subject, fill = estimate)) +
+  ggplot(coef_df_color_entropy, aes(x = predictor, y = subject, fill = estimate)) +
     geom_tile() + scale_fill_gradient2(
       low = "yellow", mid = "lightblue", high = "purple",
       midpoint = 0,
     )
   t.test( 
-    coef_df$estimate[coef_df$predictor == "entropy"],
+    coef_df_color_entropy$estimate[coef_df_color_entropy$predictor == "entropy"],
     alternative = "two.sided",
     paired = FALSE,
     var.equal = TRUE,
     conf.level = 0.95
   )
 
+AIC <- bind_rows(AIC_color_entropy, AIC_file_size, AIC_gaze, AIC_luminance_contrast, AIC_saliance, AIC_saturation)
+coef_df <- bind_rows(coef_df_color_entropy, coef_df_file_size, coef_df_gaze, coef_df_luminance_contrast, coef_df_saliance, coef_df_saturation)
 
-#ggplot(result,)
-#stat_summary()
+filter(coef_df,!str_detect(predictor,"position|blur")) |>
+mutate(predictor = case_when(
+  predictor == "gaze"  ~ "Gaze Entropy",
+  predictor == "entropy"  ~ "Color Entropy",
+  predictor == "poly.FileSize..2.2" ~ "File Size"
+  .default = predictor
+), predictor = factor(predictor, c("luminance", "contrast", "saturation", "Color Entropy", "Gaze Entropy", "saliance"))
+) |>
+  ggplot() +
+  geom_hline(yintercept = 0, linetype = "dashed") +
+  stat_summary(aes(x = predictor, y = estimate, color = predictor), fun.data = mean_cl_normal) + 
+  theme_classic() +
+  guides(color = "none") +
+  scale_color_viridis_d(option="plasma")
+
+filter(coef_df,str_detect(predictor,"position|blur")) |>
+  ggplot() +
+  geom_hline(yintercept = 0, linetype = "dashed") +
+  stat_summary(aes(x = predictor, y = estimate, color = model_name), fun.data = mean_cl_normal) + 
+  facet_wrap( ~ subject) +
+  theme_classic() +
+  scale_color_viridis_d(option="plasma") +
+  theme(axis.text.x = element_text(angle = 90), legend.position = "top") 
+
+select(ungroup(result), blur, luminance, contrast, saturation,entropy,gaze_entropy_nats,max_sal_rr_unif,FileSize) |> cor()
+
+
